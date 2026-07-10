@@ -9,4 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/setupTests.ts',
   },
+  build: {
+    sourcemap: true,
+    minify: false,
+  },
 })
