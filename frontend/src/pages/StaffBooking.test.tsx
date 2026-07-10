@@ -28,4 +28,19 @@ describe('StaffBooking', () => {
     await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
     expect(await screen.findByText(/delivered/i)).toBeInTheDocument();
   });
+  it('surfaces a payment failure instead of swallowing it', async () => {
+    api.deliverBooking.mockResolvedValue({ status: 'payment_failed', error: 'card_declined' });
+    render(<StaffBooking />);
+    const btn = await screen.findByRole('button', { name: /mark delivered/i });
+    fireEvent.click(btn);
+    await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/charge failed/i);
+  });
+  it('surfaces an error when the delivery call throws', async () => {
+    api.deliverBooking.mockRejectedValue(new Error('network'));
+    render(<StaffBooking />);
+    const btn = await screen.findByRole('button', { name: /mark delivered/i });
+    fireEvent.click(btn);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not reach/i);
+  });
 });
