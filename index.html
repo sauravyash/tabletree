@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karminal — Did you want to thank us?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream: #FBF5EC;
+    --cream-dim: #F3ECDE;
+    --espresso: #5B3E2E;
+    --espresso-deep: #3B281D;
+    --rose: #C67B85;
+    --rose-deep: #A85C68;
+    --sage: #7C8B6F;
+    --ink: #2B2320;
+    --fog: #9A8F80;
+    --line: rgba(43,35,32,0.12);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    min-height:100vh;
+    position:relative;
+  }
+
+  /* ambient texture */
+  .grain{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:radial-gradient(circle at 15% 20%, rgba(91,62,46,0.05), transparent 40%),
+                      radial-gradient(circle at 85% 80%, rgba(198,123,133,0.07), transparent 45%);
+    z-index:0;
+  }
+
+  .stage{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:520px;
+  }
+
+  .card{
+    background:var(--cream-dim);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:44px 36px;
+    box-shadow: 0 1px 2px rgba(43,35,32,0.04), 0 20px 50px -25px rgba(43,35,32,0.25);
+    position:relative;
+  }
+
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--fog);
+    margin:0 0 14px 0;
+    font-weight:500;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(28px, 5vw, 38px);
+    line-height:1.15;
+    margin:0 0 12px 0;
+    color:var(--espresso-deep);
+  }
+
+  p.sub{
+    font-size:15.5px;
+    line-height:1.55;
+    color:var(--ink);
+    opacity:0.72;
+    margin:0 0 32px 0;
+    max-width:40ch;
+  }
+
+  /* step 1: choices */
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .choice{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px 20px;
+    background:var(--cream);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    cursor:pointer;
+    text-align:left;
+    font-family:'Work Sans', sans-serif;
+    font-size:16px;
+    font-weight:500;
+    color:var(--ink);
+    transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease;
+  }
+  .choice:hover{
+    border-color: var(--rose);
+    transform: translateY(-1px);
+  }
+  .choice:active{ transform: translateY(0); }
+
+  .choice .icon{
+    width:38px;
+    height:38px;
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .choice .label small{
+    display:block;
+    font-weight:400;
+    font-size:12.5px;
+    color:var(--fog);
+    margin-top:2px;
+  }
+
+  /* step 2: form */
+  .field{
+    margin-bottom:18px;
+  }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--fog);
+    margin-bottom:8px;
+  }
+  .field input{
+    width:100%;
+    font-family:'Work Sans', sans-serif;
+    font-size:16px;
+    padding:13px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+    transition:border-color 0.2s ease;
+  }
+  .field input:focus{
+    border-color:var(--espresso);
+  }
+  .field input::placeholder{ color:#B8AD9C; }
+
+  .back{
+    background:none;
+    border:none;
+    color:var(--fog);
+    font-size:13px;
+    font-family:'Work Sans', sans-serif;
+    cursor:pointer;
+    padding:0;
+    margin-bottom:20px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .back:hover{ color:var(--ink); }
+
+  .submit{
+    width:100%;
+    padding:14px 20px;
+    border-radius:12px;
+    border:none;
+    background:var(--espresso);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:6px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .submit:hover{ background:var(--espresso-deep); transform: translateY(-1px); }
+  .submit:disabled{ opacity:0.6; cursor:default; transform:none; }
+
+  .error{
+    font-size:13px;
+    color:var(--rose-deep);
+    margin-top:10px;
+    display:none;
+  }
+
+  /* step 3: thanks */
+  .thanks-wrap{
+    text-align:center;
+    padding:12px 0 4px 0;
+  }
+  .glyph{
+    width:64px;
+    height:64px;
+    margin:0 auto 22px auto;
+    position:relative;
+  }
+
+  .thanks-wrap h1{ font-size:clamp(26px,5vw,32px); }
+
+  .hidden{ display:none !important; }
+
+  /* petal drift for flower confirmation */
+  @keyframes petal-fall{
+    0%{ transform:translateY(-10px) rotate(0deg); opacity:0; }
+    15%{ opacity:1; }
+    100%{ transform:translateY(140px) rotate(180deg); opacity:0; }
+  }
+  .petal{
+    position:absolute;
+    top:-20px;
+    font-size:18px;
+    animation:petal-fall 3.4s ease-in forwards;
+  }
+
+  /* steam rise for coffee confirmation */
+  @keyframes steam-rise{
+    0%{ transform:translateY(0) scaleX(1); opacity:0; }
+    20%{ opacity:0.55; }
+    100%{ transform:translateY(-46px) scaleX(1.4); opacity:0; }
+  }
+  .steam{
+    position:absolute;
+    bottom:30px;
+    width:6px;
+    height:26px;
+    border-radius:6px;
+    background:linear-gradient(to top, rgba(91,62,46,0.5), transparent);
+    animation:steam-rise 2.6s ease-in-out infinite;
+  }
+
+  footer.credit{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--fog);
+    margin-top:18px;
+    letter-spacing:0.02em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .petal, .steam { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="stage">
+  <div class="card">
+
+    <!-- STEP 1: choose reason -->
+    <div id="step-choice">
+      <p class="eyebrow">A small note from Karminal</p>
+      <h1>Did you want to thank us?</h1>
+      <p class="sub">Pick whichever brought you here — takes about ten seconds.</p>
+      <div class="choices">
+        <button class="choice" data-reason="flower" data-icon="flower">
+          <span class="icon">
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+              <circle cx="15" cy="15" r="3.4" fill="#C67B85"/>
+              <ellipse cx="15" cy="7.5" rx="4" ry="6" fill="#DDA1A8"/>
+              <ellipse cx="22.5" cy="15" rx="6" ry="4" fill="#DDA1A8"/>
+              <ellipse cx="15" cy="22.5" rx="4" ry="6" fill="#DDA1A8"/>
+              <ellipse cx="7.5" cy="15" rx="6" ry="4" fill="#DDA1A8"/>
+            </svg>
+          </span>
+          <span class="label">Thanks for the flower<small>You picked one up from us</small></span>
+        </button>
+        <button class="choice" data-reason="coffee" data-icon="coffee">
+          <span class="icon">
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+              <path d="M6 12h16v6a8 8 0 0 1-8 8 8 8 0 0 1-8-8v-6z" fill="#5B3E2E"/>
+              <path d="M22 13.5h1.6a2.9 2.9 0 0 1 0 5.8H21.8" stroke="#5B3E2E" stroke-width="1.8" fill="none"/>
+              <rect x="5" y="9.5" width="18" height="2.6" rx="1.3" fill="#3B281D"/>
+            </svg>
+          </span>
+          <span class="label">Thanks for the free coffee<small>You grabbed a cup on us</small></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: form -->
+    <div id="step-form" class="hidden">
+      <button class="back" id="back-btn">&larr; back</button>
+      <p class="eyebrow" id="form-eyebrow">Almost there</p>
+      <h1 id="form-heading">Glad you liked it.</h1>
+      <p class="sub" id="form-sub">Leave your email so we can say thanks properly — and tell us your go-to drink while you're at it.</p>
+
+      <form id="thanks-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <label for="beverage">Favorite beverage</label>
+          <input type="text" id="beverage" placeholder="Flat white, oat matcha, sparkling water…">
+        </div>
+        <button type="submit" class="submit" id="submit-btn">Send it</button>
+        <p class="error" id="error-msg">Something went wrong — mind trying again?</p>
+      </form>
+    </div>
+
+    <!-- STEP 3: confirmation -->
+    <div id="step-done" class="hidden thanks-wrap">
+      <div class="glyph" id="done-glyph"></div>
+      <p class="eyebrow">Noted</p>
+      <h1 id="done-heading">Thank you.</h1>
+      <p class="sub" id="done-sub" style="margin-left:auto;margin-right:auto;">We've got it — genuinely appreciate you taking the ten seconds.</p>
+    </div>
+
+  </div>
+  <footer class="credit">Karminal · made with a little too much love</footer>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://lzaykjlgeqwwywyhgrpw.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_PsOP0f9DMtr4l0FVPYpcZw_sHUnP3CG";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const stepChoice = document.getElementById('step-choice');
+  const stepForm = document.getElementById('step-form');
+  const stepDone = document.getElementById('step-done');
+  const backBtn = document.getElementById('back-btn');
+  const form = document.getElementById('thanks-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const errorMsg = document.getElementById('error-msg');
+
+  const formHeading = document.getElementById('form-heading');
+  const formEyebrow = document.getElementById('form-eyebrow');
+  const formSub = document.getElementById('form-sub');
+  const doneHeading = document.getElementById('done-heading');
+  const doneSub = document.getElementById('done-sub');
+  const doneGlyph = document.getElementById('done-glyph');
+
+  let currentReason = null;
+
+  const copy = {
+    flower: {
+      eyebrow: "The flower",
+      heading: "Glad it made you smile.",
+      sub: "Leave your email so we can say thanks properly — and tell us your go-to drink while you're at it.",
+      doneHeading: "Thank you for the kind words.",
+      doneSub: "Hope the flower's still going strong on your desk."
+    },
+    coffee: {
+      eyebrow: "The coffee",
+      heading: "Hope it hit the spot.",
+      sub: "Leave your email so we can say thanks properly — and tell us your go-to drink while you're at it.",
+      doneHeading: "Thank you for the shoutout.",
+      doneSub: "Next one's on us too, honestly."
+    }
+  };
+
+  document.querySelectorAll('.choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentReason = btn.dataset.reason;
+      const c = copy[currentReason];
+      formEyebrow.textContent = c.eyebrow;
+      formHeading.textContent = c.heading;
+      formSub.textContent = c.sub;
+      stepChoice.classList.add('hidden');
+      stepForm.classList.remove('hidden');
+      errorMsg.style.display = 'none';
+    });
+  });
+
+  backBtn.addEventListener('click', () => {
+    stepForm.classList.add('hidden');
+    stepChoice.classList.remove('hidden');
+    form.reset();
+  });
+
+  function buildGlyph(reason){
+    doneGlyph.innerHTML = '';
+    if(reason === 'flower'){
+      const petals = ['🌸','🌸','🌼'];
+      petals.forEach((p, i) => {
+        const span = document.createElement('span');
+        span.className = 'petal';
+        span.textContent = p;
+        span.style.left = (10 + i*20) + 'px';
+        span.style.animationDelay = (i * 0.4) + 's';
+        doneGlyph.appendChild(span);
+      });
+    } else {
+      for(let i=0;i<3;i++){
+        const span = document.createElement('span');
+        span.className = 'steam';
+        span.style.left = (18 + i*12) + 'px';
+        span.style.animationDelay = (i * 0.5) + 's';
+        doneGlyph.appendChild(span);
+      }
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    const email = document.getElementById('email').value.trim();
+    const beverage = document.getElementById('beverage').value.trim();
+
+    try{
+      const { error } = await supabase.from('thanks_signups').insert([{
+        reason: currentReason,
+        email: email,
+        favorite_beverage: beverage || null
+      }]);
+
+      if(error) throw error;
+
+      const c = copy[currentReason];
+      doneHeading.textContent = c.doneHeading;
+      doneSub.textContent = c.doneSub;
+      buildGlyph(currentReason);
+
+      stepForm.classList.add('hidden');
+      stepDone.classList.remove('hidden');
+    }catch(err){
+      console.error(err);
+      errorMsg.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send it';
+    }
+  });
+</script>
+</body>
+</html>
