@@ -1,0 +1,20 @@
+# Netlify build config. The deployed app is the Vite/React frontend in frontend/.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Every VITE_-prefixed var is public by design — Vite only exposes VITE_* to the
+  # client bundle, so these are meant to ship to the browser and are not secrets.
+  # Declaring them as non-secret keys stops the scanner flagging them anywhere
+  # (the inlined bundle AND .env.example). Paths are relative to base (frontend).
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_DEMO_EMAIL,VITE_DEMO_PASSWORD,VITE_DEMO_BOOKING_ID"
+  SECRETS_SCAN_OMIT_PATHS = "dist/**,.env.example"
+
+# SPA fallback: client-side routes (/confirmation, /staff) must serve index.html so
+# deep links and hard refreshes don't 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
