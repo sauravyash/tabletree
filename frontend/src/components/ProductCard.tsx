@@ -64,7 +64,7 @@ export function ProductCard({ product, config, onAdd, onRemove }: ProductCardPro
     ? `box bouquet — ${sizeLabel.toLowerCase()} — ${handleOn ? 'with' : 'without'} handle — product photo`
     : `table tree — ${sizeLabel.toLowerCase()} — product photo`;
 
-  const priceText = variant ? formatPrice(variant.priceCents, config.pricingMode) : '$—';
+  const priceText = !config.purchaseEnabled || !variant ? '$—' : formatPrice(variant.priceCents, config.pricingMode);
   const added = addedItemId !== null;
   const label = added
     ? 'Added ✓'
