@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { RealStripe } from './stripe_real.ts';
 import { runDeliver } from './deliver.ts';
 import type { StripeGateway } from './stripe.ts';
+import { authorize } from './authz.ts';
 
 Deno.serve(async (req) => {
   // Parse request (client error on bad body).
@@ -29,10 +30,10 @@ Deno.serve(async (req) => {
       .from('bookings').select().eq('id', booking_id).single();
     if (bErr || !booking) return json({ error: 'booking_not_found' }, 404);
 
-    // Only the booking owner may trigger delivery/charge (IDOR guard).
-    // NOTE: a dedicated staff role is part of the broader booking system and is
-    // out of scope here; owner-scoping is the correct guard for this demo flow.
-    if (booking.user_id !== user.id) return json({ error: 'forbidden' }, 403);
+    // Delivery/charge is allowed for the booking owner OR a staff member.
+    const { data: staffRow } = await admin
+      .from('user_roles').select('role').eq('user_id', user.id).eq('role', 'staff').maybeSingle();
+    if (!authorize(booking, user.id, !!staffRow)) return json({ error: 'forbidden' }, 403);
 
     // Idempotency: never charge an already-delivered booking again.
     if (booking.status === 'delivered') {
