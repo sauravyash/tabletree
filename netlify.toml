@@ -5,12 +5,12 @@
   publish = "dist"
 
 [build.environment]
-  # The Supabase URL + publishable anon key are set as Netlify env vars and Vite
-  # inlines them into the client bundle by design (they are safe to expose).
-  # Exclude the build output from Netlify's secrets scanner so those public values
-  # don't fail the build. Both path forms are listed to cover base- vs root-relative
-  # resolution.
-  SECRETS_SCAN_OMIT_PATHS = "frontend/dist/**,dist/**"
+  # Every VITE_-prefixed var is public by design — Vite only exposes VITE_* to the
+  # client bundle, so these are meant to ship to the browser and are not secrets.
+  # Declaring them as non-secret keys stops the scanner flagging them anywhere
+  # (the inlined bundle AND .env.example). Paths are relative to base (frontend).
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_DEMO_EMAIL,VITE_DEMO_PASSWORD,VITE_DEMO_BOOKING_ID"
+  SECRETS_SCAN_OMIT_PATHS = "dist/**,.env.example"
 
 # SPA fallback: client-side routes (/confirmation, /staff) must serve index.html so
 # deep links and hard refreshes don't 404.
