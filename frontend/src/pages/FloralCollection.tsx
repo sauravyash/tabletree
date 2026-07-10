@@ -90,7 +90,7 @@ export default function FloralCollection() {
             ))}
           </div>
 
-          <p className="disclaimer">Pricing shown is a placeholder — final pricing TBD.</p>
+          {/* <p className="disclaimer">Pricing shown is a placeholder — final pricing TBD.</p> */}
         </div>
       </div>
 

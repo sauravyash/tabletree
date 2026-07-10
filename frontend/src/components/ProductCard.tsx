@@ -95,6 +95,7 @@ export function ProductCard({ product, config, onAdd, onRemove }: ProductCardPro
     <div className="card">
       <div className="photo">
         <span>{photoLabel}</span>
+        <img src={`photos/${product.slug}.jpeg`} />
       </div>
 
       <div className="title-row">
