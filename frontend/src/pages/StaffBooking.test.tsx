@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 const api = { getBooking: vi.fn(), getBookingItems: vi.fn(), getProducts: vi.fn(), deliverBooking: vi.fn() };
 vi.mock('../api', () => api);
@@ -16,13 +17,21 @@ beforeEach(() => {
 
 describe('StaffBooking', () => {
   it('lists floral line items with size and handle', async () => {
-    render(<StaffBooking />);
+    render(
+      <MemoryRouter initialEntries={['/staff/b1']}>
+        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
+      </MemoryRouter>,
+    );
     expect(await screen.findByText(/Living Room Box Bouquet/)).toBeInTheDocument();
     expect(screen.getByText(/handle: with/i)).toBeInTheDocument();
   });
   it('marks delivered via the edge function', async () => {
     api.deliverBooking.mockResolvedValue({ status: 'delivered' });
-    render(<StaffBooking />);
+    render(
+      <MemoryRouter initialEntries={['/staff/b1']}>
+        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
+      </MemoryRouter>,
+    );
     const btn = await screen.findByRole('button', { name: /mark delivered/i });
     fireEvent.click(btn);
     await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
@@ -30,7 +39,11 @@ describe('StaffBooking', () => {
   });
   it('surfaces a payment failure instead of swallowing it', async () => {
     api.deliverBooking.mockResolvedValue({ status: 'payment_failed', error: 'card_declined' });
-    render(<StaffBooking />);
+    render(
+      <MemoryRouter initialEntries={['/staff/b1']}>
+        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
+      </MemoryRouter>,
+    );
     const btn = await screen.findByRole('button', { name: /mark delivered/i });
     fireEvent.click(btn);
     await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
@@ -38,7 +51,11 @@ describe('StaffBooking', () => {
   });
   it('surfaces an error when the delivery call throws', async () => {
     api.deliverBooking.mockRejectedValue(new Error('network'));
-    render(<StaffBooking />);
+    render(
+      <MemoryRouter initialEntries={['/staff/b1']}>
+        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
+      </MemoryRouter>,
+    );
     const btn = await screen.findByRole('button', { name: /mark delivered/i });
     fireEvent.click(btn);
     expect(await screen.findByRole('alert')).toHaveTextContent(/could not reach/i);

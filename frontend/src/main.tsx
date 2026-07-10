@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { supabase } from './supabase';
 import FloralCollection from './pages/FloralCollection';
 import Confirmation from './pages/Confirmation';
+import StaffBookings from './pages/StaffBookings';
 import StaffBooking from './pages/StaffBooking';
 import './index.css';
 
@@ -23,7 +24,8 @@ try {
 const router = createBrowserRouter([
   { path: '/', element: <FloralCollection /> },
   { path: '/confirmation', element: <Confirmation /> },
-  { path: '/staff', element: <StaffBooking /> },
+  { path: '/staff', element: <StaffBookings /> },
+  { path: '/staff/:bookingId', element: <StaffBooking /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

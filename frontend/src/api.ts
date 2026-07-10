@@ -66,3 +66,10 @@ export async function deliverBooking(bookingId: string): Promise<{ status: strin
   if (error) throw error;
   return data as { status: string; error?: string };
 }
+
+export async function listPendingBookings(): Promise<Booking[]> {
+  const { data, error } = await supabase
+    .from('bookings').select().neq('status', 'delivered').order('slot_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapBooking);
+}

@@ -4,7 +4,7 @@ const from = vi.fn();
 const invoke = vi.fn();
 vi.mock('./supabase', () => ({ supabase: { from: (...a: any[]) => from(...a), functions: { invoke: (...a: any[]) => invoke(...a) } } }));
 
-import { getAppConfig, addBookingItem, deliverBooking } from './api';
+import { getAppConfig, addBookingItem, deliverBooking, listPendingBookings } from './api';
 
 beforeEach(() => { from.mockReset(); invoke.mockReset(); });
 
@@ -37,5 +37,19 @@ describe('deliverBooking', () => {
     const res = await deliverBooking('b1');
     expect(res.status).toBe('delivered');
     expect(invoke).toHaveBeenCalledWith('deliver-booking', { body: { booking_id: 'b1' } });
+  });
+});
+
+describe('listPendingBookings', () => {
+  it('returns non-delivered bookings mapped to Booking', async () => {
+    const rows = [{ id: 'b2', customer_name: 'Alice', email: 'a@x', slot_at: null,
+      coffee_price_cents: 650, redemption_token: 't2', status: 'pending' }];
+    const order = vi.fn().mockResolvedValue({ data: rows, error: null });
+    const neq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ neq }));
+    from.mockReturnValue({ select });
+    const out = await listPendingBookings();
+    expect(neq).toHaveBeenCalledWith('status', 'delivered');
+    expect(out[0]).toMatchObject({ id: 'b2', customerName: 'Alice', status: 'pending' });
   });
 });
