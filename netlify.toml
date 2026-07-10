@@ -1,0 +1,20 @@
+# Netlify build config. The deployed app is the Vite/React frontend in frontend/.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # The Supabase URL + publishable anon key are set as Netlify env vars and Vite
+  # inlines them into the client bundle by design (they are safe to expose).
+  # Exclude the build output from Netlify's secrets scanner so those public values
+  # don't fail the build. Both path forms are listed to cover base- vs root-relative
+  # resolution.
+  SECRETS_SCAN_OMIT_PATHS = "frontend/dist/**,dist/**"
+
+# SPA fallback: client-side routes (/confirmation, /staff) must serve index.html so
+# deep links and hard refreshes don't 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
