@@ -18,4 +18,16 @@ describe('Confirmation', () => {
     render(<Confirmation />);
     expect(await screen.findByText(/demo-redeem-01/)).toBeInTheDocument();
   });
+  it('lists added floral line items with size and handle', async () => {
+    api.getBookingItems.mockResolvedValue([
+      { id: 'i1', bookingId: 'b1', variantId: 'v-md', optionSnapshot: { handle: 'with' }, priceCentsSnapshot: 6500, quantity: 1 },
+    ]);
+    api.getProducts.mockResolvedValue([
+      { id: 'p2', name: 'Living Room Box Bouquet', slug: 'box', description: null,
+        variants: [{ id: 'v-md', productId: 'p2', size: 'MD', flowerCount: 3, foliageLevel: 'appropriate', priceCents: 6500, options: [] }] },
+    ]);
+    render(<Confirmation />);
+    expect(await screen.findByText(/Living Room Box Bouquet/)).toBeInTheDocument();
+    expect(screen.getByText(/handle: with/i)).toBeInTheDocument();
+  });
 });

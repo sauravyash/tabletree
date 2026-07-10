@@ -22,6 +22,8 @@ export default function StaffBooking() {
   const [items, setItems] = useState<BookingItem[]>([]);
   const [variants, setVariants] = useState<Map<string, { v: Variant; product: string }>>(new Map());
   const [status, setStatus] = useState<string>('');
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,12 +47,24 @@ export default function StaffBooking() {
   }, []);
 
   async function markDelivered() {
-    const api = await loadApi();
-    // Use the fetched booking's own id (not the raw env constant) so the write always
-    // targets the booking record actually loaded, even if it differs from the id used
-    // to look it up — mirrors the convention in FloralCollection's handleAdd.
-    const res = await api.deliverBooking(booking!.id);
-    setStatus(res.status);
+    if (working) return; // guard against double-click double-charge
+    setWorking(true);
+    setError(null);
+    try {
+      const api = await loadApi();
+      // Use the fetched booking's own id (not the raw env constant) so the write always
+      // targets the booking record actually loaded, even if it differs from the id used
+      // to look it up — mirrors the convention in FloralCollection's handleAdd.
+      const res = await api.deliverBooking(booking!.id);
+      setStatus(res.status);
+      if (res.status === 'payment_failed') {
+        setError('Charge failed — the card was not charged. Payment method may need attention.');
+      }
+    } catch {
+      setError('Could not reach the delivery service. Please try again.');
+    } finally {
+      setWorking(false);
+    }
   }
 
   if (!booking) return null;
@@ -74,7 +88,12 @@ export default function StaffBooking() {
             );
           })}
         </ul>
-        {status !== 'delivered' && <button onClick={markDelivered}>Mark delivered</button>}
+        {status !== 'delivered' && (
+          <button onClick={markDelivered} disabled={working}>
+            {working ? 'Delivering…' : 'Mark delivered'}
+          </button>
+        )}
+        {error && <p role="alert">{error}</p>}
       </div>
     </div>
   );
