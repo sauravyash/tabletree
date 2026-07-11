@@ -6,15 +6,16 @@ import { authorize } from './authz.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
+  const cors = corsHeaders(req);
   // Parse request (client error on bad body).
   let booking_id: string | undefined;
   try {
     ({ booking_id } = await req.json());
   } catch {
-    return json({ error: 'bad_request' }, 400);
+    return json({ error: 'bad_request' }, 400, cors);
   }
-  if (!booking_id) return json({ error: 'missing_booking_id' }, 400);
+  if (!booking_id) return json({ error: 'missing_booking_id' }, 400, cors);
 
   try {
     const admin = createClient(
@@ -26,20 +27,20 @@ Deno.serve(async (req) => {
     // project JWT but has no user, so this rejects anon-key-only invocations.
     const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
     const { data: { user }, error: uErr } = await admin.auth.getUser(token);
-    if (uErr || !user) return json({ error: 'unauthorized' }, 401);
+    if (uErr || !user) return json({ error: 'unauthorized' }, 401, cors);
 
     const { data: booking, error: bErr } = await admin
       .from('bookings').select().eq('id', booking_id).single();
-    if (bErr || !booking) return json({ error: 'booking_not_found' }, 404);
+    if (bErr || !booking) return json({ error: 'booking_not_found' }, 404, cors);
 
     // Delivery/charge is allowed for the booking owner OR a staff member.
     const { data: staffRow } = await admin
       .from('user_roles').select('role').eq('user_id', user.id).eq('role', 'staff').maybeSingle();
-    if (!authorize(booking, user.id, !!staffRow)) return json({ error: 'forbidden' }, 403);
+    if (!authorize(booking, user.id, !!staffRow)) return json({ error: 'forbidden' }, 403, cors);
 
     // Idempotency: never charge an already-delivered booking again.
     if (booking.status === 'delivered') {
-      return json({ status: 'delivered', paymentIntentId: booking.payment_intent_id ?? undefined }, 200);
+      return json({ status: 'delivered', paymentIntentId: booking.payment_intent_id ?? undefined }, 200, cors);
     }
 
     const { data: items } = await admin
@@ -67,12 +68,12 @@ Deno.serve(async (req) => {
 
     // Both 'delivered' and 'payment_failed' are business outcomes of a successful
     // request; the caller reads result.status. Reserve non-2xx for actual errors.
-    return json(result, 200);
+    return json(result, 200, cors);
   } catch (_e) {
-    return json({ error: 'internal_error' }, 500);
+    return json({ error: 'internal_error' }, 500, cors);
   }
 });
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...corsHeaders } });
+function json(body: unknown, status = 200, cors: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...cors } });
 }
