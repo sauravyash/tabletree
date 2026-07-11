@@ -30,3 +30,10 @@ export interface BookingItem {
 }
 
 export interface AppConfig { purchaseEnabled: boolean; pricingMode: PricingMode }
+
+export interface StaffProfile {
+  displayName: string;
+  phone: string;
+  avatarUrl: string;
+  email: string;
+}
