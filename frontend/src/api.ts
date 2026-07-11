@@ -66,3 +66,22 @@ export async function deliverBooking(bookingId: string): Promise<{ status: strin
   if (error) throw error;
   return data as { status: string; error?: string };
 }
+
+export async function listPendingBookings(): Promise<Booking[]> {
+  const { data, error } = await supabase
+    .from('bookings').select().neq('status', 'delivered').order('slot_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapBooking);
+}
+
+export async function createSetupIntent(bookingId: string): Promise<{ clientSecret: string }> {
+  const { data, error } = await supabase.functions.invoke('create-setup-intent', { body: { booking_id: bookingId } });
+  if (error) throw error;
+  return data as { clientSecret: string };
+}
+
+export async function saveCard(bookingId: string, setupIntentId: string): Promise<{ saved: boolean }> {
+  const { data, error } = await supabase.functions.invoke('save-card', { body: { booking_id: bookingId, setup_intent_id: setupIntentId } });
+  if (error) throw error;
+  return data as { saved: boolean };
+}

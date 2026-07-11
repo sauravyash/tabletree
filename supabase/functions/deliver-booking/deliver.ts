@@ -1,4 +1,4 @@
-import type { StripeGateway } from './stripe.ts';
+import type { StripeGateway } from '../_shared/stripe.ts';
 
 export function computeCharge(
   coffee: number | null,

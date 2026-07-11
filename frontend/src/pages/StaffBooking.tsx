@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import type { Booking, BookingItem, Variant } from '../types';
-
-const BOOKING_ID = import.meta.env.VITE_DEMO_BOOKING_ID as string;
 
 type ApiModule = typeof import('../api');
 
@@ -18,6 +17,7 @@ function loadApi(): Promise<ApiModule> {
 }
 
 export default function StaffBooking() {
+  const { bookingId } = useParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [items, setItems] = useState<BookingItem[]>([]);
   const [variants, setVariants] = useState<Map<string, { v: Variant; product: string }>>(new Map());
@@ -26,11 +26,12 @@ export default function StaffBooking() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!bookingId) return;
     let cancelled = false;
     loadApi().then(async (api) => {
       const [b, it, ps] = await Promise.all([
-        api.getBooking(BOOKING_ID),
-        api.getBookingItems(BOOKING_ID),
+        api.getBooking(bookingId),
+        api.getBookingItems(bookingId),
         api.getProducts(),
       ]);
       if (cancelled) return;
@@ -44,7 +45,7 @@ export default function StaffBooking() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bookingId]);
 
   async function markDelivered() {
     if (working) return; // guard against double-click double-charge
