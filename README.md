@@ -181,6 +181,14 @@ edge-function secrets. A dev mistake can never touch prod data or take a live pa
    to each branch; `seed.sql` + `seed_dev.sql` seed non-production branches.
 2. **Supabase secrets (per branch):** set `STRIPE_SECRET_KEY` (sk_test_ on dev,
    sk_live_ on prod) and `ALLOWED_ORIGINS` (comma-separated site origins).
+
+   **IMPORTANT — ALLOWED_ORIGINS on prod is a required gate:** if `ALLOWED_ORIGINS` is unset on the prod branch, the edge-function CORS resolver silently fails open. It echoes back whatever `Origin` the request carries instead of enforcing the configured allowlist. This disables the CORS lockdown entirely, so `ALLOWED_ORIGINS` MUST be set on prod.
+
+   **Verification:** after deploying prod, confirm the CORS lockdown works by making a preflight check from a disallowed origin:
+   ```bash
+   curl -si -X OPTIONS -H "Origin: https://not-allowed.example" -H "Access-Control-Request-Method: POST" https://ifyvsrmdnmqlqifcqpnx.supabase.co/functions/v1/save-card | grep -i access-control-allow-origin
+   ```
+   A correctly-configured prod **must NOT** echo `Access-Control-Allow-Origin: https://not-allowed.example` in the response. If it does, `ALLOWED_ORIGINS` is unset and the lockdown is open.
 3. **Netlify:** one site. Set env var VALUES per context — production context
    (main) gets the prod Supabase URL/anon + pk_live_ publishable key; the `dev`
    branch-deploy context gets the dev branch URL/anon + pk_test_ key.
@@ -193,6 +201,8 @@ edge-function secrets. A dev mistake can never touch prod data or take a live pa
 Merge `dev` → `main`. Netlify redeploys the production context; Supabase applies
 any new migrations to the production branch. Because seeds never run on the
 production branch, no demo data is introduced.
+
+**Caution:** never run `supabase db reset` or any manual seed operation against the prod branch ref (`ifyvsrmdnmqlqifcqpnx`). The `seed_dev.sql` file contains demo data (demo user and test bookings), and running a reset would reintroduce this data into production. Seeds are applied automatically only to non-production branches.
 
 ## Notes
 
