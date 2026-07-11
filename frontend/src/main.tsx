@@ -8,6 +8,7 @@ import Address from './funnel/Address';
 import Slot from './funnel/Slot';
 import Account from './funnel/Account';
 import Card from './funnel/Card';
+import FunnelGate from './funnel/FunnelGate';
 import FloralCollection from './pages/FloralCollection';
 import Confirmation from './pages/Confirmation';
 import StaffBookings from './pages/StaffBookings';
@@ -23,11 +24,16 @@ const router = createBrowserRouter([
     element: <FunnelLayout />,
     children: [
       { path: '/', element: <Landing /> },
-      { path: '/beverage', element: <Beverage /> },
-      { path: '/address', element: <Address /> },
-      { path: '/slot', element: <Slot /> },
-      { path: '/account', element: <Account /> },
-      { path: '/card', element: <Card /> },
+      {
+        element: <FunnelGate />,
+        children: [
+          { path: '/beverage', element: <Beverage /> },
+          { path: '/address', element: <Address /> },
+          { path: '/slot', element: <Slot /> },
+          { path: '/account', element: <Account /> },
+          { path: '/card', element: <Card /> },
+        ],
+      },
     ],
   },
   { path: '/bonus-flowers', element: <FloralCollection /> },

@@ -627,3 +627,13 @@ button { font-family: 'Work Sans', sans-serif; }
 .coming-soon-note { color: var(--muted); font-size: 16px; margin: 0; }
 .coming-soon-home { color: var(--gold); text-decoration: none; font-weight: 600; margin-top: 8px; }
 .coming-soon-home:hover { text-decoration: underline; }
+
+/* ---- Funnel loading gate ---- */
+.funnel-loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.funnel-spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--line-strong); border-top-color: var(--gold);
+  animation: funnel-spin 0.8s linear infinite;
+}
+@keyframes funnel-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .funnel-spinner { animation: none; } }
