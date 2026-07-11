@@ -1,0 +1,13 @@
+# Supabase CLI config. dev and prod are SEPARATE projects sharing these migrations:
+#   prod = tabletree      (ifyvsrmdnmqlqifcqpnx)  <- project_id default below
+#   dev  = tabletree-dev  (ogxjrvhrwoltkcncprcf)
+# Switch targets with `supabase link --project-ref <ref>`. Only the sections we
+# deliberately set are listed; everything else uses Supabase defaults.
+project_id = "ifyvsrmdnmqlqifcqpnx"
+
+[db.seed]
+# Seeds run on local `supabase db reset` and when you run them explicitly against
+# a project. seed.sql = shared catalog data; seed_dev.sql = demo user/booking.
+# NEVER run these against the prod ref — seed_dev.sql would put demo data in prod.
+enabled = true
+sql_paths = ["./seed.sql", "./seed_dev.sql"]

@@ -14,6 +14,7 @@ vi.mock('@stripe/react-stripe-js', () => ({
   useElements: () => ({}),
 }));
 vi.mock('@stripe/stripe-js', () => ({ loadStripe: () => Promise.resolve({}) }));
+vi.mock('../stripe', () => ({ stripePublishableKey: () => 'pk_test_mock' }));
 
 vi.mock('../api', () => api);
 vi.mock('react-router-dom', async (orig) => ({ ...(await orig() as any), useNavigate: () => navigate }));
