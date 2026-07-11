@@ -8,9 +8,11 @@ import Address from './funnel/Address';
 import Slot from './funnel/Slot';
 import Account from './funnel/Account';
 import Card from './funnel/Card';
+import FunnelGate from './funnel/FunnelGate';
 import FloralCollection from './pages/FloralCollection';
 import Confirmation from './pages/Confirmation';
 import StaffBookings from './pages/StaffBookings';
+import ComingSoon from './pages/ComingSoon';
 import './index.css';
 
 function FunnelLayout() {
@@ -22,14 +24,21 @@ const router = createBrowserRouter([
     element: <FunnelLayout />,
     children: [
       { path: '/', element: <Landing /> },
-      { path: '/beverage', element: <Beverage /> },
-      { path: '/address', element: <Address /> },
-      { path: '/slot', element: <Slot /> },
-      { path: '/account', element: <Account /> },
-      { path: '/card', element: <Card /> },
+      {
+        element: <FunnelGate />,
+        children: [
+          { path: '/beverage', element: <Beverage /> },
+          { path: '/address', element: <Address /> },
+          { path: '/slot', element: <Slot /> },
+          { path: '/account', element: <Account /> },
+          { path: '/card', element: <Card /> },
+        ],
+      },
     ],
   },
   { path: '/bonus-flowers', element: <FloralCollection /> },
+  { path: '/jobs', element: <ComingSoon title="Jobs" /> },
+  { path: '/cowork', element: <ComingSoon title="Co-work" /> },
   { path: '/confirmation', element: <Confirmation /> },
   { path: '/staff', element: <StaffBookings /> },
   { path: '/staff/:bookingId', element: <StaffBookings /> },
