@@ -546,3 +546,84 @@ button { font-family: 'Work Sans', sans-serif; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- KosList.au landing ---- */
+.koslist-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: clamp(24px, 6vh, 64px) 20px; background: linear-gradient(135deg, #fffdf8 0%, #f6efe0 100%);
+}
+.koslist-wrap {
+  width: min(100%, 760px); text-align: center;
+  background: rgba(255, 255, 255, 0.72); border: 1px solid var(--line);
+  border-radius: 28px; padding: clamp(28px, 5vw, 52px) clamp(20px, 5vw, 56px);
+  box-shadow: 0 40px 90px -60px rgba(58, 46, 31, 0.5);
+}
+.koslist-eyebrow { text-align: center; margin-bottom: 18px; }
+.koslist-wordmark {
+  font-family: 'Fraunces', serif; font-weight: 500; letter-spacing: -0.03em;
+  font-size: clamp(44px, 9vw, 76px); line-height: 1; margin: 0 0 clamp(24px, 4vw, 36px);
+  color: var(--ink);
+}
+.koslist-dot { color: var(--gold); }
+
+.koslist-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: clamp(20px, 3vw, 28px); }
+.koslist-chip {
+  border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(255, 255, 255, 0.6);
+  color: var(--ink); font: inherit; font-size: 15px; padding: 10px 22px; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.koslist-chip:hover:not(:disabled) { background: #fff; border-color: var(--gold-soft); }
+.koslist-chip:disabled { color: var(--muted); cursor: not-allowed; opacity: 0.6; }
+
+.koslist-ask {
+  display: flex; align-items: center; gap: 12px; min-height: 60px;
+  padding: 8px 22px; margin: 0 auto clamp(20px, 3vw, 28px); max-width: 620px;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: #fff;
+  box-shadow: 0 12px 30px -22px rgba(58, 46, 31, 0.45);
+}
+.koslist-ask:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(184, 137, 46, 0.13); }
+.koslist-ask-icon { color: var(--gold-soft); font-size: 18px; flex: 0 0 auto; }
+.koslist-ask input {
+  width: 100%; min-width: 0; border: 0; outline: 0; background: transparent;
+  color: var(--ink); font: inherit; font-size: 16px;
+}
+.koslist-ask input::placeholder { color: var(--muted); }
+/* animation state reuses .wish-launch + .shooting-star from above */
+.koslist-ask--launch { justify-content: center; overflow: hidden; color: var(--gold-deep); font-weight: 650; }
+
+.koslist-error { max-width: 620px; margin: -8px auto 20px; color: #9d3726; font-size: 13px; }
+.koslist-error button { margin-left: 4px; border: 0; padding: 0; background: none; color: inherit; font: inherit; font-weight: 650; text-decoration: underline; cursor: pointer; }
+
+.koslist-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.koslist-card {
+  display: flex; align-items: center; justify-content: center; min-height: 96px;
+  border-radius: 16px; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500;
+  border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
+}
+.koslist-card--inert {
+  color: var(--muted); cursor: not-allowed;
+  background-image: repeating-linear-gradient(45deg, rgba(58, 46, 31, 0.05) 0 10px, transparent 10px 20px);
+}
+.koslist-card--active {
+  cursor: pointer; font: inherit; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600;
+  color: var(--gold-deep); border: 1.5px solid var(--gold);
+  background: linear-gradient(135deg, #fffdf6 0%, #f7ecd2 100%);
+  box-shadow: 0 14px 34px -22px rgba(184, 137, 46, 0.6);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.koslist-card--active:hover { box-shadow: 0 18px 40px -20px rgba(184, 137, 46, 0.75); transform: translateY(-1px); }
+
+@media (max-width: 640px) {
+  .koslist-cards { grid-template-columns: 1fr; }
+}
+
+/* ---- Coming soon stub ---- */
+.coming-soon {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; text-align: center; padding: 40px 20px;
+  background: linear-gradient(135deg, #fffdf8 0%, #f6efe0 100%);
+}
+.coming-soon-title { font-size: clamp(34px, 8vw, 56px); margin: 0; color: var(--gold-deep); }
+.coming-soon-note { color: var(--muted); font-size: 16px; margin: 0; }
+.coming-soon-home { color: var(--gold); text-decoration: none; font-weight: 600; margin-top: 8px; }
+.coming-soon-home:hover { text-decoration: underline; }
