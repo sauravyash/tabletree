@@ -215,6 +215,7 @@ button { font-family: 'Work Sans', sans-serif; }
 @keyframes shooting-star { 0% { left: -16%; opacity: 0; transform: translateY(-50%) scaleX(0.35); } 12% { opacity: 1; } 75% { opacity: 1; } 100% { left: 108%; opacity: 0; transform: translateY(-50%) scaleX(1.8); } }
 @keyframes wish-message-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .landing-card [role="alert"] { margin: 12px 0 0; color: #9d3726; font-size: 13px; }
+.landing-setup-error button { margin-left: 4px; border: 0; padding: 0; background: none; color: inherit; font: inherit; font-weight: 650; text-decoration: underline; cursor: pointer; }
 .wish-saved { margin: 12px 0 0; color: #5e7c50; font-size: 13px; }
 .landing-action { margin-top: 24px; min-height: 52px; border-radius: 14px; font-size: 16px; }
 

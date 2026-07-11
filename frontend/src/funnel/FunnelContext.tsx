@@ -17,10 +17,16 @@ export function FunnelProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const api = await import('../api');
-      await api.ensureAnonSession();
-      const b = await api.getMyDraftBooking();
-      if (!cancelled) { setBooking(b); setLoading(false); }
+      try {
+        const api = await import('../api');
+        await api.ensureAnonSession();
+        const b = await api.getMyDraftBooking();
+        if (!cancelled) setBooking(b);
+      } catch {
+        if (!cancelled) setBooking(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
