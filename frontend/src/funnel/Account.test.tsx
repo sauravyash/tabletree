@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 const api = { upgradeAccount: vi.fn(), setCustomer: vi.fn() };
 vi.mock('../api', () => api);
@@ -28,6 +28,19 @@ beforeEach(() => {
 });
 
 describe('Account', () => {
+  it('shows the remaining server-held slot time', () => {
+    render(<Account />);
+    expect(screen.getByRole('status')).toHaveTextContent(/delivery slot is held for 4:|delivery slot is held for 5:/i);
+  });
+
+  it('returns to slot selection when the hold expires', () => {
+    vi.useFakeTimers();
+    render(<Account />);
+    act(() => { vi.advanceTimersByTime(5 * 60_000); });
+    expect(navigate).toHaveBeenCalledWith('/slot');
+    vi.useRealTimers();
+  });
+
   it('upgrades, stamps the name, and advances to /card', async () => {
     api.upgradeAccount.mockResolvedValue(undefined);
     api.setCustomer.mockResolvedValue(undefined);

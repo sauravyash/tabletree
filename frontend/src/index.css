@@ -126,6 +126,71 @@ button { font-family: 'Work Sans', sans-serif; }
   font-size: 15px; font-weight: 600; cursor: pointer;
 }
 
+/* Onboarding funnel */
+.funnel-screen {
+  padding: clamp(32px, 7vh, 76px) 20px 56px;
+  background: linear-gradient(135deg, #fffdf8 0%, #f8f1e3 100%);
+}
+
+.funnel-wrap {
+  width: min(100%, 1240px);
+  min-height: min(690px, calc(100vh - 112px));
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(460px, 1.1fr);
+  align-items: center;
+  gap: clamp(48px, 9vw, 150px);
+}
+.funnel-head { max-width: 510px; margin: 0; text-align: left; }
+.funnel-head h1 { font-size: clamp(36px, 6vw, 52px); letter-spacing: -0.04em; }
+.funnel-progress { height: 5px; width: 132px; margin: 0 0 22px; border-radius: 999px; overflow: hidden; background: rgba(138, 106, 47, 0.14); }
+.funnel-progress span { display: block; height: 100%; border-radius: inherit; background: var(--gold); }
+.funnel-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: clamp(20px, 4vw, 30px);
+  box-shadow: 0 22px 55px -38px rgba(58, 46, 31, 0.42);
+}
+
+.beverage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.beverage-option {
+  min-height: 92px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px;
+  padding: 15px 16px; cursor: pointer; border: 1px solid var(--line-strong); border-radius: 16px;
+  background: #fff; color: var(--ink); font: inherit; font-weight: 600; text-align: left;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.beverage-option:hover { border-color: var(--gold-soft); transform: translateY(-2px); }
+.beverage-option[aria-pressed="true"] { background: #f8efd9; border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.beverage-mark { color: var(--gold-deep); font-size: 20px; line-height: 1; }
+.funnel-action { margin-top: 20px; min-height: 52px; border-radius: 14px; font-size: 16px; }
+
+.address-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.address-form label { grid-column: 1 / -1; display: grid; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 650; }
+.address-form label.field-half { grid-column: auto; }
+.address-form input {
+  width: 100%; min-height: 50px; border: 1px solid var(--line-strong); border-radius: 12px; padding: 0 14px;
+  color: var(--ink); background: #fff; font: inherit; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.address-form input::placeholder { color: #aaa091; }
+.address-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(184, 137, 46, 0.13); }
+.optional { color: var(--muted); font-weight: 400; }
+.address-form [role="alert"] { grid-column: 1 / -1; margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff1ed; color: #9d3726; font-size: 14px; }
+.address-form .funnel-action { grid-column: 1 / -1; margin-top: 4px; }
+
+@media (max-width: 500px) {
+  .funnel-screen { padding-inline: 16px; }
+  .funnel-card { border-radius: 20px; }
+  .beverage-grid { grid-template-columns: 1fr; }
+  .beverage-option { min-height: 68px; flex-direction: row; align-items: center; }
+}
+
+@media (max-width: 820px) {
+  .funnel-screen { padding-block: 40px; }
+  .funnel-wrap { min-height: 0; grid-template-columns: 1fr; gap: 24px; max-width: 620px; }
+  .funnel-head { margin: 0 auto; text-align: center; }
+  .funnel-progress { margin-inline: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .size-btn, .toggle .knob, .add-btn { transition: none; }
 }
