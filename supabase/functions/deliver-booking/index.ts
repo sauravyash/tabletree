@@ -3,8 +3,10 @@ import { RealStripe } from '../_shared/stripe_real.ts';
 import { runDeliver } from './deliver.ts';
 import type { StripeGateway } from '../_shared/stripe.ts';
 import { authorize } from './authz.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   // Parse request (client error on bad body).
   let booking_id: string | undefined;
   try {
@@ -72,5 +74,5 @@ Deno.serve(async (req) => {
 });
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...corsHeaders } });
 }

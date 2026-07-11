@@ -1,8 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { RealStripe } from '../_shared/stripe_real.ts';
 import { resolveCustomer } from './setup.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   let booking_id: string | undefined;
   try { ({ booking_id } = await req.json()); } catch { return json({ error: 'bad_request' }, 400); }
   if (!booking_id) return json({ error: 'missing_booking_id' }, 400);
@@ -31,5 +33,5 @@ Deno.serve(async (req) => {
 });
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...corsHeaders } });
 }
