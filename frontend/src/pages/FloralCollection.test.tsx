@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
-const api = { getProducts: vi.fn(), getAppConfig: vi.fn(), getBooking: vi.fn(),
+const api = { getProducts: vi.fn(), getAppConfig: vi.fn(), getMyBooking: vi.fn(),
               getBookingItems: vi.fn(), addBookingItem: vi.fn(), removeBookingItem: vi.fn() };
 vi.mock('../api', () => api);
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
@@ -15,7 +15,7 @@ const products = [{ id: 'p1', name: 'Table Tree', slug: 'table-tree', descriptio
 beforeEach(() => {
   Object.values(api).forEach(f => f.mockReset());
   api.getProducts.mockResolvedValue(products);
-  api.getBooking.mockResolvedValue({ id: 'b1', redemptionToken: 't', status: 'pending', coffeePriceCents: 500, customerName: null, email: null, slotAt: null });
+  api.getMyBooking.mockResolvedValue({ id: 'b1', redemptionToken: 't', status: 'pending', coffeePriceCents: 500, customerName: null, email: null, slotAt: null });
   api.getBookingItems.mockResolvedValue([]);
 });
 

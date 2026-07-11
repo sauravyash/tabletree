@@ -37,3 +37,12 @@ export interface StaffProfile {
   avatarUrl: string;
   email: string;
 }
+
+export interface DraftBooking {
+  id: string; storeCode: string | null; beverage: string | null;
+  addressLine1: string | null; addressLine2: string | null;
+  suburb: string | null; postcode: string | null;
+  slotAt: string | null; holdExpiresAt: string | null;
+  customerName: string | null; email: string | null; status: string;
+}
+export interface SlotOption { slotAt: string; remaining: number }

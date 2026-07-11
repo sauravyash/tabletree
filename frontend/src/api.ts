@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Product, Variant, Booking, BookingItem, AppConfig, PricingMode } from './types';
+import type { Product, Variant, Booking, BookingItem, AppConfig, PricingMode, DraftBooking, SlotOption } from './types';
 
 export async function getAppConfig(): Promise<AppConfig> {
   const { data, error } = await supabase.from('app_config').select();
@@ -84,4 +84,69 @@ export async function saveCard(bookingId: string, setupIntentId: string): Promis
   const { data, error } = await supabase.functions.invoke('save-card', { body: { booking_id: bookingId, setup_intent_id: setupIntentId } });
   if (error) throw error;
   return data as { saved: boolean };
+}
+
+export async function ensureAnonSession(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) return;
+  const { error } = await supabase.auth.signInAnonymously();
+  if (error) throw error;
+}
+export async function startDraftBooking(storeCode: string | null): Promise<string> {
+  const { data, error } = await supabase.rpc('start_draft_booking', { p_store_code: storeCode });
+  if (error) throw error; return data as string;
+}
+export async function setBeverage(beverage: string): Promise<void> {
+  const { error } = await supabase.rpc('set_booking_beverage', { p_beverage: beverage });
+  if (error) throw error;
+}
+export async function checkPostcode(postcode: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('check_postcode', { p_postcode: postcode });
+  if (error) throw error; return data as boolean;
+}
+export async function setAddress(a: { line1: string; line2: string; suburb: string; postcode: string }): Promise<boolean> {
+  const { data, error } = await supabase.rpc('set_booking_address', {
+    p_line1: a.line1, p_line2: a.line2, p_suburb: a.suburb, p_postcode: a.postcode });
+  if (error) throw error; return data as boolean;
+}
+export async function availableSlots(): Promise<SlotOption[]> {
+  const { data, error } = await supabase.rpc('available_slots');
+  if (error) throw error;
+  return (data ?? []).map((r: any): SlotOption => ({ slotAt: r.slot_at, remaining: r.remaining }));
+}
+export async function holdSlot(slotAt: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('hold_slot', { p_slot_at: slotAt });
+  if (error) throw error; return data as boolean;
+}
+export async function upgradeAccount(email: string, password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ email, password });
+  if (error) throw error;
+}
+export async function setCustomer(name: string): Promise<void> {
+  const { error } = await supabase.rpc('set_booking_customer', { p_name: name });
+  if (error) throw error;
+}
+export async function finalizeDraftBooking(): Promise<void> {
+  const { error } = await supabase.rpc('finalize_draft_booking');
+  if (error) throw error;
+}
+export async function getConfigList(key: string): Promise<string[]> {
+  const { data, error } = await supabase.from('app_config').select('value').eq('key', key).maybeSingle();
+  if (error) throw error; return (data?.value as string[]) ?? [];
+}
+function mapDraft(b: any): DraftBooking {
+  return { id: b.id, storeCode: b.store_code, beverage: b.beverage,
+    addressLine1: b.address_line1, addressLine2: b.address_line2, suburb: b.suburb,
+    postcode: b.postcode, slotAt: b.slot_at, holdExpiresAt: b.hold_expires_at,
+    customerName: b.customer_name, email: b.email, status: b.status };
+}
+export async function getMyDraftBooking(): Promise<DraftBooking | null> {
+  const { data, error } = await supabase.from('bookings').select()
+    .eq('status', 'draft').order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error; return data ? mapDraft(data) : null;
+}
+export async function getMyBooking(): Promise<Booking | null> {
+  const { data, error } = await supabase.from('bookings').select()
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error; return data ? mapBooking(data) : null;
 }

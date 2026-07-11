@@ -6,7 +6,13 @@ import { createSetupIntent, saveCard } from '../api';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-function CardForm({ bookingId }: { bookingId: string }) {
+function CardForm({
+  bookingId,
+  onSaved,
+}: {
+  bookingId: string;
+  onSaved?: (id: string) => void | Promise<void>;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -23,7 +29,11 @@ function CardForm({ bookingId }: { bookingId: string }) {
     }
     try {
       await saveCard(bookingId, setupIntent.id);
-      navigate('/');
+      if (onSaved) {
+        await onSaved(bookingId);
+      } else {
+        navigate('/');
+      }
     } catch {
       setError('Card confirmed but saving failed. Please try again.'); setWorking(false);
     }
@@ -38,7 +48,13 @@ function CardForm({ bookingId }: { bookingId: string }) {
   );
 }
 
-export default function CardSave({ bookingId }: { bookingId: string }) {
+export default function CardSave({
+  bookingId,
+  onSaved,
+}: {
+  bookingId: string;
+  onSaved?: (id: string) => void | Promise<void>;
+}) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +74,7 @@ export default function CardSave({ bookingId }: { bookingId: string }) {
       {error && <p role="alert">{error}</p>}
       {options && (
         <Elements stripe={stripePromise} options={options}>
-          <CardForm bookingId={bookingId} />
+          <CardForm bookingId={bookingId} onSaved={onSaved} />
         </Elements>
       )}
     </div></div>
