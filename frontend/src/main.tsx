@@ -11,6 +11,7 @@ import Card from './funnel/Card';
 import FloralCollection from './pages/FloralCollection';
 import Confirmation from './pages/Confirmation';
 import StaffBookings from './pages/StaffBookings';
+import ComingSoon from './pages/ComingSoon';
 import './index.css';
 
 function FunnelLayout() {
@@ -30,6 +31,8 @@ const router = createBrowserRouter([
     ],
   },
   { path: '/bonus-flowers', element: <FloralCollection /> },
+  { path: '/jobs', element: <ComingSoon title="Jobs" /> },
+  { path: '/cowork', element: <ComingSoon title="Co-work" /> },
   { path: '/confirmation', element: <Confirmation /> },
   { path: '/staff', element: <StaffBookings /> },
   { path: '/staff/:bookingId', element: <StaffBookings /> },
