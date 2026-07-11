@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { createSetupIntent, saveCard } from '../api';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+import { stripePublishableKey } from '../stripe';
 
 function CardForm({
   bookingId,
@@ -57,6 +56,7 @@ export default function CardSave({
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const stripePromise = useMemo(() => loadStripe(stripePublishableKey()), []);
 
   useEffect(() => {
     let cancelled = false;

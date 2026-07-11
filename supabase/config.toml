@@ -1,0 +1,11 @@
+# Supabase project config. Consumed by the CLI and by branching (the production
+# branch = git main; a persistent `dev` branch gets its own database). Only the
+# sections we deliberately set are listed; everything else uses Supabase defaults.
+project_id = "ifyvsrmdnmqlqifcqpnx"
+
+[db.seed]
+# Seeds run on non-production branches and on local `supabase db reset`.
+# They do NOT run on the production branch. seed.sql = shared catalog data;
+# seed_dev.sql = demo user/booking that must never reach prod.
+enabled = true
+sql_paths = ["./seed.sql", "./seed_dev.sql"]
