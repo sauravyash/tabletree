@@ -1,6 +1,6 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { computeCharge, runDeliver } from './deliver.ts';
-import type { StripeGateway } from './stripe.ts';
+import type { StripeGateway } from '../_shared/stripe.ts';
 
 Deno.test('computeCharge sums coffee + floral snapshots', () => {
   assertEquals(
@@ -25,6 +25,15 @@ function fakeGateway(behavior: 'ok' | 'decline'): StripeGateway {
         throw e;
       }
       return Promise.resolve({ id: 'pi_test_1' });
+    },
+    createCustomer() {
+      return Promise.reject(new Error('not used in this test'));
+    },
+    createSetupIntent() {
+      return Promise.reject(new Error('not used in this test'));
+    },
+    retrieveSetupIntent() {
+      return Promise.reject(new Error('not used in this test'));
     },
   };
 }
@@ -53,6 +62,15 @@ Deno.test('runDeliver skips charge when amount is zero', async () => {
     charge() {
       called = true;
       return Promise.resolve({ id: 'x' });
+    },
+    createCustomer() {
+      return Promise.reject(new Error('not used in this test'));
+    },
+    createSetupIntent() {
+      return Promise.reject(new Error('not used in this test'));
+    },
+    retrieveSetupIntent() {
+      return Promise.reject(new Error('not used in this test'));
     },
   };
   const r = await runDeliver({ coffee: null, items: [], customer: 'cus', paymentMethod: 'pm' }, g);

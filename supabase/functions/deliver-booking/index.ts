@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { RealStripe } from './stripe_real.ts';
+import { RealStripe } from '../_shared/stripe_real.ts';
 import { runDeliver } from './deliver.ts';
-import type { StripeGateway } from './stripe.ts';
+import type { StripeGateway } from '../_shared/stripe.ts';
 import { authorize } from './authz.ts';
 
 Deno.serve(async (req) => {
@@ -47,6 +47,9 @@ Deno.serve(async (req) => {
     // so zero-amount deliveries don't require STRIPE_SECRET_KEY.
     const gateway: StripeGateway = {
       charge: (args) => new RealStripe(Deno.env.get('STRIPE_SECRET_KEY')!).charge(args),
+      createCustomer: (args) => new RealStripe(Deno.env.get('STRIPE_SECRET_KEY')!).createCustomer(args),
+      createSetupIntent: (args) => new RealStripe(Deno.env.get('STRIPE_SECRET_KEY')!).createSetupIntent(args),
+      retrieveSetupIntent: (id) => new RealStripe(Deno.env.get('STRIPE_SECRET_KEY')!).retrieveSetupIntent(id),
     };
 
     const result = await runDeliver({
