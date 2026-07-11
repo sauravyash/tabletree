@@ -29,27 +29,32 @@ export default function Address() {
   }
 
   return (
-    <div className="screen"><div className="wrap">
-      <header className="head"><p className="eyebrow">Step 3 of 6</p><h1>Where should we deliver?</h1></header>
-      <form onSubmit={onSubmit}>
+    <div className="screen funnel-screen"><div className="wrap funnel-wrap">
+      <header className="head funnel-head">
+        <p className="eyebrow">Step 3 of 6</p>
+        <div className="funnel-progress" aria-hidden="true"><span style={{ width: '50%' }} /></div>
+        <h1>Where should we deliver?</h1>
+        <p>We’ll check that your address is in our delivery area.</p>
+      </header>
+      <form className="funnel-card address-form" onSubmit={onSubmit}>
         <label>
           Address line 1
-          <input value={line1} onChange={(e) => setLine1(e.target.value)} required />
+          <input placeholder="12 Smith Street" autoComplete="address-line1" value={line1} onChange={(e) => setLine1(e.target.value)} required />
         </label>
         <label>
-          Address line 2
-          <input value={line2} onChange={(e) => setLine2(e.target.value)} />
+          Apartment, suite, etc. <span className="optional">Optional</span>
+          <input placeholder="Apartment 4" autoComplete="address-line2" value={line2} onChange={(e) => setLine2(e.target.value)} />
         </label>
-        <label>
+        <label className="field-half">
           Suburb
-          <input value={suburb} onChange={(e) => setSuburb(e.target.value)} required />
+          <input placeholder="Alexandria" autoComplete="address-level2" value={suburb} onChange={(e) => setSuburb(e.target.value)} required />
         </label>
-        <label>
+        <label className="field-half">
           Postcode
-          <input value={postcode} onChange={(e) => setPostcode(e.target.value)} required />
+          <input placeholder="2015" autoComplete="postal-code" inputMode="numeric" maxLength={4} value={postcode} onChange={(e) => setPostcode(e.target.value)} required />
         </label>
         {outOfRange && <p role="alert">Sorry — that's not in our delivery area yet.</p>}
-        <button className="add-btn" type="submit">Continue</button>
+        <button className="add-btn funnel-action" type="submit">Check delivery area &amp; continue</button>
       </form>
     </div></div>
   );
