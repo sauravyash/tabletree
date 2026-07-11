@@ -10,7 +10,7 @@ vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
 const refresh = vi.fn();
 const future = new Date(Date.now() + 5 * 60_000).toISOString();
 vi.mock('./FunnelContext', () => ({ useFunnel: () => ({
-  booking: { id: 'bk-1', status: 'draft', postcode: '2000', holdExpiresAt: future }, refresh,
+  booking: { id: 'bk-1', status: 'draft', postcode: '2017', holdExpiresAt: future }, refresh,
 }) }));
 
 import Account from './Account';

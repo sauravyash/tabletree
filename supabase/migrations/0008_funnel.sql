@@ -17,7 +17,7 @@ alter table bookings add constraint bookings_status_check
   check (status in ('draft','pending','delivered','payment_failed'));
 
 insert into app_config (key, value) values
-  ('delivery_postcodes', '["2000","2010","2011","3000","3001"]'::jsonb),
+  ('delivery_postcodes', '["2017","2018","2021","2031","2032"]'::jsonb),
   ('beverage_options',   '["Flat white","Latte","Cappuccino","Long black","Tea"]'::jsonb),
   ('slot_schedule',      '{"weekdays":[1,2,3,4,5,6,7],"startHour":9,"endHour":17,"slotMinutes":60,"capacity":3,"horizonDays":7}'::jsonb)
 on conflict (key) do nothing;

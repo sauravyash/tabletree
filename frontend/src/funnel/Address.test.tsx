@@ -15,7 +15,7 @@ import Address from './Address';
 function fill() {
   fireEvent.change(screen.getByLabelText(/address line 1/i), { target: { value: '1 King St' } });
   fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: 'Sydney' } });
-  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: '2000' } });
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: '2017' } });
 }
 
 beforeEach(() => {

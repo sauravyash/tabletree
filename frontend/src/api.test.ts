@@ -86,8 +86,8 @@ describe('startDraftBooking', () => {
 describe('checkPostcode', () => {
   it('returns the boolean', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
-    expect(await checkPostcode('2000')).toBe(true);
-    expect(rpc).toHaveBeenCalledWith('check_postcode', { p_postcode: '2000' });
+    expect(await checkPostcode('2017')).toBe(true);
+    expect(rpc).toHaveBeenCalledWith('check_postcode', { p_postcode: '2017' });
   });
 });
 describe('availableSlots', () => {

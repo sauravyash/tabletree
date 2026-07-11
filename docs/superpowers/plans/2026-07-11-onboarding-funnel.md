@@ -91,7 +91,7 @@ alter table bookings add constraint bookings_status_check
   check (status in ('draft','pending','delivered','payment_failed'));
 
 insert into app_config (key, value) values
-  ('delivery_postcodes', '["2000","2010","2011","3000","3001"]'::jsonb),
+  ('delivery_postcodes', '["2017","2018","2021","2031","2032"]'::jsonb),
   ('beverage_options',   '["Flat white","Latte","Cappuccino","Long black","Tea"]'::jsonb),
   ('slot_schedule',      '{"weekdays":[1,2,3,4,5,6,7],"startHour":9,"endHour":17,"slotMinutes":60,"capacity":3,"horizonDays":7}'::jsonb)
 on conflict (key) do nothing;
@@ -197,9 +197,9 @@ create or replace function _as_owner() returns void language sql as $$
 $$;
 set local role authenticated; select _as_owner();
 select start_draft_booking('SHOP42');
-select ok(check_postcode('2000'), 'seeded postcode is in range');
+select ok(check_postcode('2017'), 'seeded postcode is in range');
 select ok(not check_postcode('9999'), 'unknown postcode is out of range');
-select ok(set_booking_address('1 King St', '', 'Sydney', '2000'), 'address accepted in range');
+select ok(set_booking_address('1 King St', '', 'Sydney', '2017'), 'address accepted in range');
 select is((select suburb from bookings where user_id=auth.uid() and status='draft'),
           'Sydney', 'suburb persisted');
 select ok(not set_booking_address('X', '', 'Nowhere', '9999'), 'address rejected out of range');
@@ -462,8 +462,8 @@ describe('startDraftBooking', () => {
 describe('checkPostcode', () => {
   it('returns the boolean', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
-    expect(await checkPostcode('2000')).toBe(true);
-    expect(rpc).toHaveBeenCalledWith('check_postcode', { p_postcode: '2000' });
+    expect(await checkPostcode('2017')).toBe(true);
+    expect(rpc).toHaveBeenCalledWith('check_postcode', { p_postcode: '2017' });
   });
 });
 describe('availableSlots', () => {
@@ -845,7 +845,7 @@ import Address from './Address';
 function fill() {
   fireEvent.change(screen.getByLabelText(/address line 1/i), { target: { value: '1 King St' } });
   fireEvent.change(screen.getByLabelText(/suburb/i), { target: { value: 'Sydney' } });
-  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: '2000' } });
+  fireEvent.change(screen.getByLabelText(/postcode/i), { target: { value: '2017' } });
 }
 beforeEach(() => { api.setAddress.mockReset(); navigate.mockReset(); refresh.mockReset(); });
 describe('Address', () => {
@@ -932,7 +932,7 @@ const navigate = vi.fn();
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
 const refresh = vi.fn();
 vi.mock('./FunnelContext', () => ({ useFunnel: () => ({
-  booking: { id: 'bk-1', status: 'draft', postcode: '2000' }, refresh }) }));
+  booking: { id: 'bk-1', status: 'draft', postcode: '2017' }, refresh }) }));
 import Slot from './Slot';
 const slots = [{ slotAt: '2026-07-12T09:00:00Z', remaining: 2 }, { slotAt: '2026-07-12T10:00:00Z', remaining: 1 }];
 beforeEach(() => { Object.values(api).forEach((f) => f.mockReset()); navigate.mockReset(); refresh.mockReset();
@@ -1024,7 +1024,7 @@ vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
 const refresh = vi.fn();
 const future = new Date(Date.now() + 5 * 60_000).toISOString();
 vi.mock('./FunnelContext', () => ({ useFunnel: () => ({
-  booking: { id: 'bk-1', status: 'draft', postcode: '2000', holdExpiresAt: future }, refresh }) }));
+  booking: { id: 'bk-1', status: 'draft', postcode: '2017', holdExpiresAt: future }, refresh }) }));
 import Account from './Account';
 function fill() {
   fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Ada' } });
