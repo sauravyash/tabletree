@@ -10,7 +10,7 @@ vi.mock('./supabase', () => ({ supabase: { from: (...a: any[]) => from(...a),
   functions: { invoke: (...a: any[]) => invoke(...a) }, rpc: (...a: any[]) => rpc(...a), auth } }));
 
 import { getAppConfig, addBookingItem, deliverBooking, listPendingBookings, createSetupIntent, saveCard,
-  startDraftBooking, checkPostcode, availableSlots, holdSlot, getConfigList } from './api';
+  startDraftBooking, setBookingWish, checkPostcode, availableSlots, holdSlot, getConfigList } from './api';
 
 beforeEach(() => { from.mockReset(); invoke.mockReset(); rpc.mockReset(); });
 
@@ -81,6 +81,13 @@ describe('startDraftBooking', () => {
     rpc.mockResolvedValue({ data: 'bk-1', error: null });
     expect(await startDraftBooking('SHOP42')).toBe('bk-1');
     expect(rpc).toHaveBeenCalledWith('start_draft_booking', { p_store_code: 'SHOP42' });
+  });
+});
+describe('setBookingWish', () => {
+  it('calls the guarded wish RPC', async () => {
+    rpc.mockResolvedValue({ error: null });
+    await setBookingWish('A sunny kitchen corner');
+    expect(rpc).toHaveBeenCalledWith('set_booking_wish', { p_wish: 'A sunny kitchen corner' });
   });
 });
 describe('checkPostcode', () => {

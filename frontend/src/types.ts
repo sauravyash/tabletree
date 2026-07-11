@@ -40,6 +40,7 @@ export interface StaffProfile {
 
 export interface DraftBooking {
   id: string; storeCode: string | null; beverage: string | null;
+  wish: string | null;
   addressLine1: string | null; addressLine2: string | null;
   suburb: string | null; postcode: string | null;
   slotAt: string | null; holdExpiresAt: string | null;
