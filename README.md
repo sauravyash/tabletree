@@ -158,6 +158,42 @@ code change is needed to go live.
 
 Without the secret, `deliver-booking` returns `{status:"payment_failed", error:"charge_failed"}`.
 
+## Environments (dev/prod)
+
+Two isolated environments via Supabase branching. `main` is the production
+branch; a persistent `dev` branch has its own database, API URL, keys, and
+edge-function secrets. A dev mistake can never touch prod data or take a live payment.
+
+| Layer | prod (`main`) | dev (`dev` branch) |
+|---|---|---|
+| Supabase DB | tabletree production branch (`ifyvsrmdnmqlqifcqpnx`) | persistent `dev` branch |
+| VITE_SUPABASE_URL / ANON_KEY | prod project values | dev branch values |
+| STRIPE_SECRET_KEY (Supabase secret) | sk_live_… | sk_test_… |
+| VITE_STRIPE_PUBLISHABLE_KEY (Netlify env) | pk_live_… | pk_test_… |
+| ALLOWED_ORIGINS (Supabase secret) | prod site origin | dev site origin + http://localhost:5173 |
+| Netlify | production context (← main) | branch-deploy context (← dev) |
+
+### One-time setup (dashboards)
+
+1. **Supabase branching:** Dashboard → project `tabletree` → connect the GitHub
+   repo, designate `main` as the production branch, enable branching. Create a
+   persistent branch named `dev`. Migrations in `supabase/migrations/` auto-apply
+   to each branch; `seed.sql` + `seed_dev.sql` seed non-production branches.
+2. **Supabase secrets (per branch):** set `STRIPE_SECRET_KEY` (sk_test_ on dev,
+   sk_live_ on prod) and `ALLOWED_ORIGINS` (comma-separated site origins).
+3. **Netlify:** one site. Set env var VALUES per context — production context
+   (main) gets the prod Supabase URL/anon + pk_live_ publishable key; the `dev`
+   branch-deploy context gets the dev branch URL/anon + pk_test_ key.
+4. **Supabase Auth URLs (per branch):** Authentication → URL Configuration. Set
+   the Site URL and Redirect URLs to that branch's host (dev site URL for dev,
+   prod site URL for prod) so email/magic-link redirects land correctly.
+
+### dev → prod promotion
+
+Merge `dev` → `main`. Netlify redeploys the production context; Supabase applies
+any new migrations to the production branch. Because seeds never run on the
+production branch, no demo data is introduced.
+
 ## Notes
 
 - Free in-store Table Tree = `bookings.redemption_token`, shown on the Confirmation page.
