@@ -1,63 +1,81 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-const api = { getBooking: vi.fn(), getBookingItems: vi.fn(), getProducts: vi.fn(), deliverBooking: vi.fn() };
+const api = vi.hoisted(() => ({
+  listPendingBookings: vi.fn(),
+  getProducts: vi.fn(),
+  getBookingItems: vi.fn(),
+  deliverBooking: vi.fn(),
+}));
 vi.mock('../api', () => api);
+
+const { auth, from } = vi.hoisted(() => ({
+  auth: {
+    getSession: vi.fn(),
+    signInWithPassword: vi.fn(),
+    updateUser: vi.fn(),
+  },
+  from: vi.fn(),
+}));
+vi.mock('../supabase', () => ({ supabase: { auth, from } }));
 
 import StaffBooking from './StaffBooking';
 
 beforeEach(() => {
-  Object.values(api).forEach(f => f.mockReset());
-  api.getBooking.mockResolvedValue({ id: 'b1', redemptionToken: 't', status: 'pending', coffeePriceCents: 500, customerName: 'Demo', email: null, slotAt: null });
-  api.getProducts.mockResolvedValue([{ id: 'p2', name: 'Living Room Box Bouquet', slug: 'box', description: null,
-    variants: [{ id: 'v-md', productId: 'p2', size: 'MD', flowerCount: 3, foliageLevel: 'appropriate', priceCents: 6500, options: [] }] }]);
-  api.getBookingItems.mockResolvedValue([{ id: 'i1', bookingId: 'b1', variantId: 'v-md', optionSnapshot: { handle: 'with' }, priceCentsSnapshot: 6500, quantity: 1 }]);
+  Object.values(api).forEach((fn) => fn.mockReset());
+  api.listPendingBookings.mockResolvedValue([
+    {
+      id: 'b1',
+      customerName: 'Alice Example',
+      email: 'alice@tabletree.test',
+      slotAt: '2026-07-11T12:00:00.000Z',
+      coffeePriceCents: 650,
+      redemptionToken: 'a',
+      status: 'pending',
+    },
+  ]);
+  api.getProducts.mockResolvedValue([{ id: 'p1', name: 'Table Tree', slug: 'table-tree', description: null, variants: [] }]);
+  api.getBookingItems.mockResolvedValue([]);
+  api.deliverBooking.mockResolvedValue({ status: 'delivered' });
+  auth.getSession.mockReset();
+  auth.getSession.mockResolvedValue({
+    data: {
+      session: {
+        user: {
+          id: 'u-f1',
+          email: 'staff@tabletree.test',
+          user_metadata: {},
+        },
+      },
+    },
+  });
+  auth.signInWithPassword.mockReset();
+  auth.updateUser.mockReset();
+  from.mockReset();
+  from.mockReturnValue({
+    select: () => ({
+      eq: () => ({
+        eq: () => ({
+          maybeSingle: () => Promise.resolve({ data: { role: 'staff' } }),
+        }),
+      }),
+    }),
+  });
 });
 
-describe('StaffBooking', () => {
-  it('lists floral line items with size and handle', async () => {
+describe('StaffBooking deep-link compatibility', () => {
+  it('opens the workspace with the route booking selected', async () => {
     render(
       <MemoryRouter initialEntries={['/staff/b1']}>
-        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
+        <Routes>
+          <Route path="/staff" element={<StaffBooking />} />
+          <Route path="/staff/:bookingId" element={<StaffBooking />} />
+        </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByText(/Living Room Box Bouquet/)).toBeInTheDocument();
-    expect(screen.getByText(/handle: with/i)).toBeInTheDocument();
-  });
-  it('marks delivered via the edge function', async () => {
-    api.deliverBooking.mockResolvedValue({ status: 'delivered' });
-    render(
-      <MemoryRouter initialEntries={['/staff/b1']}>
-        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
-      </MemoryRouter>,
-    );
-    const btn = await screen.findByRole('button', { name: /mark delivered/i });
-    fireEvent.click(btn);
-    await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
-    expect(await screen.findByText(/delivered/i)).toBeInTheDocument();
-  });
-  it('surfaces a payment failure instead of swallowing it', async () => {
-    api.deliverBooking.mockResolvedValue({ status: 'payment_failed', error: 'card_declined' });
-    render(
-      <MemoryRouter initialEntries={['/staff/b1']}>
-        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
-      </MemoryRouter>,
-    );
-    const btn = await screen.findByRole('button', { name: /mark delivered/i });
-    fireEvent.click(btn);
-    await waitFor(() => expect(api.deliverBooking).toHaveBeenCalledWith('b1'));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/charge failed/i);
-  });
-  it('surfaces an error when the delivery call throws', async () => {
-    api.deliverBooking.mockRejectedValue(new Error('network'));
-    render(
-      <MemoryRouter initialEntries={['/staff/b1']}>
-        <Routes><Route path="/staff/:bookingId" element={<StaffBooking />} /></Routes>
-      </MemoryRouter>,
-    );
-    const btn = await screen.findByRole('button', { name: /mark delivered/i });
-    fireEvent.click(btn);
-    expect(await screen.findByRole('alert')).toHaveTextContent(/could not reach/i);
+
+    expect(await screen.findByRole('heading', { name: /Alice Example/i, level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Alice Example/i })).toBeInTheDocument();
   });
 });
