@@ -161,49 +161,79 @@ Without the secret, `deliver-booking` returns `{status:"payment_failed", error:"
 
 ## Environments (dev/prod)
 
-Two isolated environments via Supabase branching. `main` is the production
-branch; a persistent `dev` branch has its own database, API URL, keys, and
-edge-function secrets. A dev mistake can never touch prod data or take a live payment.
+Two isolated environments, **one Supabase project each**. `main` is production;
+the `dev` git branch is development. A dev mistake can never touch prod data or
+take a live payment because dev talks to a completely separate database and a
+Stripe sandbox.
 
 | Layer | prod (`main`) | dev (`dev` branch) |
 |---|---|---|
-| Supabase DB | tabletree production branch (`ifyvsrmdnmqlqifcqpnx`) | persistent `dev` branch |
-| VITE_SUPABASE_URL / ANON_KEY | prod project values | dev branch values |
-| STRIPE_SECRET_KEY (Supabase secret) | sk_live_… | sk_test_… |
+| Supabase project | `tabletree` (`ifyvsrmdnmqlqifcqpnx`) | `tabletree-dev` (`ogxjrvhrwoltkcncprcf`) |
+| VITE_SUPABASE_URL | `https://ifyvsrmdnmqlqifcqpnx.supabase.co` | `https://ogxjrvhrwoltkcncprcf.supabase.co` |
+| VITE_SUPABASE_ANON_KEY | prod publishable key | `sb_publishable_nrYaSY3dYN6VaROsFCPuxg_ohiX2h6-` |
+| STRIPE_SECRET_KEY (Supabase fn secret) | sk_live_… | sk_test_… |
 | VITE_STRIPE_PUBLISHABLE_KEY (Netlify env) | pk_live_… | pk_test_… |
-| ALLOWED_ORIGINS (Supabase secret) | prod site origin | dev site origin + http://localhost:5173 |
+| ALLOWED_ORIGINS (Supabase fn secret) | prod site origin | dev site origin + http://localhost:5173 |
 | Netlify | production context (← main) | branch-deploy context (← dev) |
 
-### One-time setup (dashboards)
+Both projects share the same migrations (`supabase/migrations/`), kept in sync
+with `supabase db push`. The dev project is additionally seeded with demo data
+(`seed.sql` + `seed_dev.sql`); prod gets catalog only, never the demo rows.
 
-1. **Supabase branching:** Dashboard → project `tabletree` → connect the GitHub
-   repo, designate `main` as the production branch, enable branching. Create a
-   persistent branch named `dev`. Migrations in `supabase/migrations/` auto-apply
-   to each branch; `seed.sql` + `seed_dev.sql` seed non-production branches.
-2. **Supabase secrets (per branch):** set `STRIPE_SECRET_KEY` (sk_test_ on dev,
-   sk_live_ on prod) and `ALLOWED_ORIGINS` (comma-separated site origins).
+### Keeping the two projects in sync
 
-   **IMPORTANT — ALLOWED_ORIGINS on prod is a required gate:** if `ALLOWED_ORIGINS` is unset on the prod branch, the edge-function CORS resolver silently fails open. It echoes back whatever `Origin` the request carries instead of enforcing the configured allowlist. This disables the CORS lockdown entirely, so `ALLOWED_ORIGINS` MUST be set on prod.
+Migrations are the source of truth — apply them to whichever project you target:
 
-   **Verification:** after deploying prod, confirm the CORS lockdown works by making a preflight check from a disallowed origin:
+```bash
+supabase link --project-ref ogxjrvhrwoltkcncprcf && supabase db push   # dev
+supabase link --project-ref ifyvsrmdnmqlqifcqpnx && supabase db push   # prod
+```
+
+### One-time setup
+
+1. **Dev project schema + seed** — already provisioned (all migrations + both
+   seeds applied to `tabletree-dev`). For a fresh rebuild: `supabase db push`
+   against the dev ref, then run `seed.sql` and `seed_dev.sql` against it.
+2. **Edge functions (per project)** — deploy to each; the CLI bundles the shared
+   `_shared/` code automatically:
+   ```bash
+   supabase functions deploy --project-ref ogxjrvhrwoltkcncprcf   # dev
+   supabase functions deploy --project-ref ifyvsrmdnmqlqifcqpnx   # prod
+   ```
+3. **Supabase function secrets (per project)** — set `STRIPE_SECRET_KEY`
+   (sk_test_ on dev, sk_live_ on prod) and `ALLOWED_ORIGINS` (comma-separated
+   site origins):
+   ```bash
+   supabase secrets set --project-ref ogxjrvhrwoltkcncprcf \
+     STRIPE_SECRET_KEY=sk_test_… ALLOWED_ORIGINS=https://dev--<site>.netlify.app,http://localhost:5173
+   supabase secrets set --project-ref ifyvsrmdnmqlqifcqpnx \
+     STRIPE_SECRET_KEY=sk_live_… ALLOWED_ORIGINS=https://<prod-site>
+   ```
+
+   **IMPORTANT — ALLOWED_ORIGINS on prod is a required gate:** if `ALLOWED_ORIGINS` is unset on the prod project, the edge-function CORS resolver silently fails open. It echoes back whatever `Origin` the request carries instead of enforcing the allowlist, disabling the CORS lockdown entirely, so it MUST be set on prod.
+
+   **Verification:** after deploying prod, confirm the lockdown works with a preflight from a disallowed origin:
    ```bash
    curl -si -X OPTIONS -H "Origin: https://not-allowed.example" -H "Access-Control-Request-Method: POST" https://ifyvsrmdnmqlqifcqpnx.supabase.co/functions/v1/save-card | grep -i access-control-allow-origin
    ```
-   A correctly-configured prod **must NOT** echo `Access-Control-Allow-Origin: https://not-allowed.example` in the response. If it does, `ALLOWED_ORIGINS` is unset and the lockdown is open.
-3. **Netlify:** one site. Set env var VALUES per context — production context
-   (main) gets the prod Supabase URL/anon + pk_live_ publishable key; the `dev`
-   branch-deploy context gets the dev branch URL/anon + pk_test_ key.
-4. **Supabase Auth URLs (per branch):** Authentication → URL Configuration. Set
-   the Site URL and Redirect URLs to that branch's host (dev site URL for dev,
+   A correctly-configured prod **must NOT** echo `Access-Control-Allow-Origin: https://not-allowed.example`. If it does, `ALLOWED_ORIGINS` is unset and the lockdown is open.
+4. **Netlify (one site, two contexts):** production context (main) → prod Supabase
+   URL/anon + `pk_live_` key; `dev` branch-deploy context → dev project URL/anon +
+   `pk_test_` key.
+5. **Supabase Auth URLs (per project):** Authentication → URL Configuration. Set
+   the Site URL + Redirect URLs to that environment's host (dev site URL for dev,
    prod site URL for prod) so email/magic-link redirects land correctly.
 
 ### dev → prod promotion
 
-Merge `dev` → `main`. Netlify redeploys the production context; Supabase applies
-any new migrations to the production branch. Because seeds never run on the
-production branch, no demo data is introduced.
+Merge `dev` → `main` (git). Netlify redeploys the production context. Apply any
+new migrations to prod with `supabase db push` against the prod ref, and redeploy
+functions if they changed. Demo data is never introduced to prod because
+`seed_dev.sql` is only ever run against the dev project.
 
-**Caution:** never run `supabase db reset` or any manual seed operation against the prod branch ref (`ifyvsrmdnmqlqifcqpnx`). The `seed_dev.sql` file contains demo data (demo user and test bookings), and running a reset would reintroduce this data into production. Seeds are applied automatically only to non-production branches.
+**Caution:** never run `supabase db reset`, `seed.sql`, or `seed_dev.sql` against
+the prod ref (`ifyvsrmdnmqlqifcqpnx`). `seed_dev.sql` contains the demo user +
+booking and would reintroduce test data into production.
 
 ## Notes
 
