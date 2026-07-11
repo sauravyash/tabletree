@@ -6,6 +6,7 @@ import FloralCollection from './pages/FloralCollection';
 import Confirmation from './pages/Confirmation';
 import StaffBookings from './pages/StaffBookings';
 import StaffBooking from './pages/StaffBooking';
+import CardSave from './pages/CardSave';
 import './index.css';
 
 // Demo convenience: sign in the seeded user so RLS-scoped reads/writes work.
@@ -26,6 +27,7 @@ const router = createBrowserRouter([
   { path: '/confirmation', element: <Confirmation /> },
   { path: '/staff', element: <StaffBookings /> },
   { path: '/staff/:bookingId', element: <StaffBooking /> },
+  { path: '/card', element: <CardSave bookingId={import.meta.env.VITE_DEMO_BOOKING_ID as string} /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

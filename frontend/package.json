@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.7.0",
+    "@stripe/stripe-js": "^9.9.0",
     "@supabase/supabase-js": "^2.109.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
