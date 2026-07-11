@@ -44,22 +44,29 @@ export default function Account() {
   }
 
   return (
-    <div className="screen"><div className="wrap">
-      <header className="head"><p className="eyebrow">Step 5 of 6</p><h1>Create your account</h1></header>
-      {secondsRemaining > 0 && <p role="status">Your delivery slot is held for {minutes}:{seconds}.</p>}
-      <form onSubmit={onSubmit}>
+    <div className="screen funnel-screen"><div className="wrap funnel-wrap">
+      <header className="head funnel-head">
+        <p className="eyebrow">Step 5 of 6</p>
+        <div className="funnel-progress" aria-hidden="true"><span style={{ width: '83.333%' }} /></div>
+        <h1>Create your account</h1>
+        <p>Save your details so we can keep your delivery on track.</p>
+      </header>
+      <form className="funnel-card account-form" onSubmit={onSubmit}>
+        {secondsRemaining > 0 && <p className="hold-status" role="status"><span aria-hidden="true">◷</span> Your delivery slot is held for <strong>{minutes}:{seconds}</strong>.</p>}
         <label>
           Name
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input placeholder="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label>
           Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
           Password
           <input
             type="password"
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -67,7 +74,7 @@ export default function Account() {
           />
         </label>
         {error && <p role="alert">{error}</p>}
-        <button className="add-btn" type="submit">Create account</button>
+        <button className="add-btn funnel-action" type="submit">Create account</button>
       </form>
     </div></div>
   );

@@ -30,7 +30,7 @@ describe('Slot', () => {
   it('holds a picked slot and advances to /account', async () => {
     api.holdSlot.mockResolvedValue(true);
     render(<Slot />);
-    fireEvent.click((await screen.findAllByRole('button'))[0]);
+    fireEvent.click((await screen.findByText('2 spots left')).closest('button')!);
     await waitFor(() => expect(api.holdSlot).toHaveBeenCalledWith('2026-07-12T09:00:00Z'));
     expect(navigate).toHaveBeenCalledWith('/account');
   });
@@ -39,7 +39,7 @@ describe('Slot', () => {
     api.holdSlot.mockResolvedValue(false);
     render(<Slot />);
     const initialLoads = api.availableSlots.mock.calls.length;
-    fireEvent.click((await screen.findAllByRole('button'))[0]);
+    fireEvent.click((await screen.findByText('2 spots left')).closest('button')!);
     await screen.findByText(/just taken/i);
     expect(navigate).not.toHaveBeenCalled();
     expect(api.availableSlots.mock.calls.length).toBeGreaterThan(initialLoads);
