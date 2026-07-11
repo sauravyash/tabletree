@@ -24,7 +24,8 @@ supabase/
   migrations/   0001 schema · 0002 RLS + grants · 0003 guard trigger · 0004 harden trigger
                 0005 drop client bookings-UPDATE + money CHECKs
                 0006 roles (user_roles + has_role) · 0007 staff-read RLS
-  seed.sql      2 products, 5 variants (placeholder pricing), demo user + booking
+  seed.sql      2 products, 5 variants (placeholder pricing) — shared catalog only
+  seed_dev.sql  demo user + booking (dev/branch-only; never seeds the prod branch)
   seed_test.sql staff/admin/alice/bob/carol test users + bookings #2-#4
   tests/        pgTAP tests (schema, seed, RLS, guard trigger) for `supabase test db`
   functions/
