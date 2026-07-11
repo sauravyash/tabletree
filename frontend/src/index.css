@@ -177,6 +177,22 @@ button { font-family: 'Work Sans', sans-serif; }
 .address-form [role="alert"] { grid-column: 1 / -1; margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff1ed; color: #9d3726; font-size: 14px; }
 .address-form .funnel-action { grid-column: 1 / -1; margin-top: 4px; }
 
+.account-form { display: grid; gap: 16px; align-content: start; }
+.account-form label { display: grid; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 650; }
+.account-form input {
+  width: 100%; min-height: 50px; border: 1px solid var(--line-strong); border-radius: 12px; padding: 0 14px;
+  color: var(--ink); background: #fff; font: inherit; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.account-form input::placeholder { color: #aaa091; }
+.account-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(184, 137, 46, 0.13); }
+.hold-status {
+  display: flex; align-items: center; gap: 9px; margin: 0 0 4px; padding: 12px 14px; border: 1px solid rgba(184, 137, 46, 0.25);
+  border-radius: 12px; background: #fdf6e8; color: var(--gold-deep); font-size: 13px;
+}
+.hold-status span { font-size: 18px; }
+.account-form [role="alert"] { margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff1ed; color: #9d3726; font-size: 14px; }
+.account-form .funnel-action { margin-top: 4px; }
+
 @media (max-width: 500px) {
   .funnel-screen { padding-inline: 16px; }
   .funnel-card { border-radius: 20px; }
@@ -189,6 +205,43 @@ button { font-family: 'Work Sans', sans-serif; }
   .funnel-wrap { min-height: 0; grid-template-columns: 1fr; gap: 24px; max-width: 620px; }
   .funnel-head { margin: 0 auto; text-align: center; }
   .funnel-progress { margin-inline: auto; }
+}
+
+/* Delivery slot picker */
+.slot-screen { padding: clamp(32px, 7vh, 76px) 20px 56px; background: linear-gradient(135deg, #fffdf8 0%, #f8f1e3 100%); }
+.slot-wrap { width: min(100%, 1240px); min-height: min(690px, calc(100vh - 112px)); gap: 24px; }
+.slot-head { max-width: 600px; margin: 0 auto; }
+.slot-head .funnel-progress { margin-inline: auto; }
+.slot-picker { display: grid; grid-template-columns: minmax(320px, 0.85fr) minmax(390px, 1.15fr); overflow: hidden; border: 1px solid var(--line); border-radius: 24px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 22px 55px -38px rgba(58, 46, 31, 0.42); }
+.calendar-panel, .times-panel { padding: clamp(22px, 3vw, 34px); }
+.calendar-panel { background: #fcf8ef; border-right: 1px solid var(--line); }
+.slot-section-label { margin: 0 0 8px; font-size: 11px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.selected-date { margin: 0 0 24px; font-family: 'Fraunces', serif; font-size: 24px; color: var(--gold-deep); }
+.slot-picker .rdp { --rdp-accent-color: var(--gold); --rdp-accent-background-color: #f5e8c9; --rdp-day-height: 40px; --rdp-day-width: 40px; margin: 12px 0 0; }
+.slot-picker .rdp-button:hover:not([disabled]):not(.rdp-selected) { background: #f5e8c9; }
+.slot-picker .rdp-day_button { font: inherit; font-size: 13px; }
+.slot-picker .rdp-disabled { opacity: 0.25; }
+.time-period + .time-period { margin-top: 22px; }
+.time-period h2 { margin: 0 0 10px; color: var(--ink); font-size: 13px; font-weight: 650; }
+.time-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.time-option { min-height: 67px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease; }
+.time-option:hover { border-color: var(--gold); background: #fdf6e8; transform: translateY(-1px); }
+.time-option small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.times-panel [role="alert"] { margin: 0 0 18px; padding: 10px 12px; border-radius: 10px; background: #fff1ed; color: #9d3726; font-size: 13px; }
+.slot-helper { margin-top: 0; }
+
+@media (max-width: 820px) {
+  .slot-screen { padding-block: 40px; }
+  .slot-wrap { min-height: 0; }
+  .slot-picker { grid-template-columns: 1fr; }
+  .calendar-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+
+@media (max-width: 460px) {
+  .slot-screen { padding-inline: 16px; }
+  .slot-picker { border-radius: 20px; }
+  .time-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .calendar-panel, .times-panel { padding: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
