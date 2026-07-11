@@ -6,29 +6,44 @@ import { useFunnel } from './FunnelContext';
 export default function Landing() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { refresh } = useFunnel();
+  const { loading, refresh } = useFunnel();
   const initialized = useRef(false);
   const [wish, setWish] = useState('');
   const [saving, setSaving] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [setupAttempt, setSetupAttempt] = useState(0);
   const [wishError, setWishError] = useState<string | null>(null);
   const [wishSaved, setWishSaved] = useState(false);
   const [wishLaunched, setWishLaunched] = useState(false);
   const storeCode = params.get('store');
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (loading || initialized.current) return;
     initialized.current = true;
     let cancelled = false;
     (async () => {
-      await startDraftBooking(storeCode);
-      if (!cancelled) {
+      try {
+        await startDraftBooking(storeCode);
         await refresh();
-        setDraftReady(true);
+        if (!cancelled) {
+          setDraftReady(true);
+          setSetupError(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setSetupError('We couldn’t prepare your delivery. Please try again.');
+        }
       }
     })();
     return () => { cancelled = true; };
-  }, [storeCode, refresh]);
+  }, [loading, setupAttempt, storeCode, refresh]);
+
+  function retrySetup() {
+    initialized.current = false;
+    setSetupError(null);
+    setSetupAttempt((attempt) => attempt + 1);
+  }
 
   async function saveWish(): Promise<boolean> {
     const value = wish.trim();
@@ -85,6 +100,7 @@ export default function Landing() {
             <span>Wish sent</span>
           </div>
         )}
+        {setupError && <p className="landing-setup-error" role="alert">{setupError} <button type="button" onClick={retrySetup}>Retry</button></p>}
         {wishError && <p role="alert">{wishError}</p>}
         {wishSaved && <p className="wish-saved" role="status">Wish saved</p>}
         <button className="add-btn landing-action" onClick={start} disabled={saving || !draftReady}>
