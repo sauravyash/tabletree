@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import type { Booking, BookingItem, Variant } from '../types';
 import { formatPrice } from '../money';
 
-const BOOKING_ID = import.meta.env.VITE_DEMO_BOOKING_ID as string;
-
 type ApiModule = typeof import('../api');
 
 // Imported lazily (at call time) rather than statically at module scope. The page test
@@ -26,11 +24,10 @@ export default function Confirmation() {
   useEffect(() => {
     let cancelled = false;
     loadApi().then(async (api) => {
-      const [b, it, ps] = await Promise.all([
-        api.getBooking(BOOKING_ID),
-        api.getBookingItems(BOOKING_ID),
-        api.getProducts(),
-      ]);
+      const [b, ps] = await Promise.all([api.getMyBooking(), api.getProducts()]);
+      if (cancelled) return;
+      if (!b) return;
+      const it = await api.getBookingItems(b.id);
       if (cancelled) return;
       const m = new Map<string, { v: Variant; product: string }>();
       ps.forEach((p) => p.variants.forEach((v) => m.set(v.id, { v, product: p.name })));

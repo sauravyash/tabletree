@@ -1,12 +1,16 @@
-# Tabletree — Floral Cup Collection
+# Tabletree — Onboarding Funnel + Floral Add-ons
 
-An optional **floral add-on step** in the coffee-delivery booking flow: customers add a
-Table Tree and/or Living Room Box Bouquet to their booking just before the confirmation
-page. Floral items attach to the booking and are charged with the coffee in a single
-off-session Stripe PaymentIntent when staff mark the booking delivered.
+A six-step onboarding funnel now fronts the coffee-delivery booking flow: store landing,
+beverage preference, address validation, slot hold, account creation, and card save. Once
+the booking is finalized to `pending`, customers can optionally add a Table Tree and/or
+Living Room Box Bouquet before the confirmation page. Floral items attach to the booking
+and are charged with the coffee in a single off-session Stripe PaymentIntent when staff
+mark the booking delivered.
 
 - Design spec: [`docs/superpowers/specs/2026-07-10-floral-cup-collection-design.md`](docs/superpowers/specs/2026-07-10-floral-cup-collection-design.md)
 - Implementation plan: [`docs/superpowers/plans/2026-07-10-floral-cup-collection.md`](docs/superpowers/plans/2026-07-10-floral-cup-collection.md)
+- Funnel spec: [`docs/superpowers/specs/2026-07-11-onboarding-funnel-design.md`](docs/superpowers/specs/2026-07-11-onboarding-funnel-design.md)
+- Funnel plan: [`docs/superpowers/plans/2026-07-11-onboarding-funnel.md`](docs/superpowers/plans/2026-07-11-onboarding-funnel.md)
 
 ## Architecture
 
@@ -32,7 +36,7 @@ supabase/
     save-card/            Deno edge fn: confirms the SetupIntent server-side, stamps
                            stripe_customer_id/stripe_payment_method_id onto the booking
 frontend/       Vite + React + TS; supabase-js; FloralCollection / Confirmation / CardSave /
-                StaffBookings / StaffBooking
+                StaffBookings / StaffBooking + onboarding funnel screens
 ```
 
 Hosted project: **`ifyvsrmdnmqlqifcqpnx`** (region `ap-northeast-1`).
@@ -44,7 +48,7 @@ cd frontend
 cp .env.example .env      # then fill in the values below
 npm install
 npm run dev               # http://localhost:5173
-npm test                  # 11/11 vitest
+npm test
 ```
 
 `.env` values (from the Supabase project's API settings):
@@ -52,20 +56,33 @@ npm test                  # 11/11 vitest
 ```
 VITE_SUPABASE_URL=https://ifyvsrmdnmqlqifcqpnx.supabase.co
 VITE_SUPABASE_ANON_KEY=<publishable or anon key>
-VITE_DEMO_EMAIL=demo@tabletree.test
-VITE_DEMO_PASSWORD=demo-password
-VITE_DEMO_BOOKING_ID=00000000-0000-0000-0000-000000000001
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...       # Stripe sandbox publishable key; required for /card
 ```
 
 Routes:
-- `/` — floral add-ons
+- `/` — onboarding funnel
+- `/bonus-flowers` — floral add-ons
 - `/confirmation` — redemption token
-- `/card` — save a real card via Stripe Elements (`create-setup-intent` → `<PaymentElement>` →
-  `save-card`) for the signed-in customer's booking
 - `/staff` — pending-bookings list (all non-delivered bookings, staff-only via RLS); prompts for
   staff sign-in if the current session lacks the `staff` role
 - `/staff/:bookingId` — booking detail: line items + Mark delivered (owner or staff can deliver)
+
+## Onboarding funnel
+
+The root flow creates and progressively fills a `draft` booking through `SECURITY DEFINER`
+RPCs from migration `0008_funnel.sql`:
+
+1. Anonymous auth is established in the browser.
+2. A draft booking is started and enriched with store, beverage, address, and slot hold data.
+3. The anonymous user is upgraded in place with account credentials and the customer name is
+   stamped onto the draft.
+4. The existing `create-setup-intent`, `save-card`, and `CardSave` Stripe flow is reused to
+   save a payment method.
+5. `finalize_draft_booking()` flips the booking from `draft` to `pending`, after which the user
+   lands on `/bonus-flowers`.
+
+Anonymous sign-ins must be enabled in Supabase Auth, and `VITE_STRIPE_PUBLISHABLE_KEY` is
+required for the card step.
 
 ### Seeded test credentials
 
@@ -94,7 +111,7 @@ Unit tests: `deno test` in each function directory (network-free).
 
 ## Card-save flow
 
-`/card` replaces the old hardcoded `seed_stripe.ts` card attachment with a real browser flow:
+The funnel's `/card` step reuses the existing browser card-save flow:
 
 1. On mount, the page calls `create-setup-intent` (verify_jwt=true), which authenticates the
    caller, loads their booking, reuses `stripe_customer_id` if already set or creates a Stripe
@@ -105,7 +122,7 @@ Unit tests: `deno test` in each function directory (network-free).
    `status === 'succeeded'` and that the SetupIntent's customer matches the booking's stamped
    customer, then writes `stripe_payment_method_id` (and re-affirms `stripe_customer_id`) onto
    the booking with the service-role key.
-4. The page navigates back to `/`.
+4. The page finalizes the draft booking and routes to `/bonus-flowers`.
 
 `deliver-booking` treats a booking with no saved payment method as `payment_failed`, so a
 dropped `/card` flow is safe — the customer can just re-run it.

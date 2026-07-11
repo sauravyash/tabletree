@@ -4,8 +4,6 @@ import type { AppConfig, Booking, BookingItem, Product } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { ContinueBar } from '../components/ContinueBar';
 
-const BOOKING_ID = import.meta.env.VITE_DEMO_BOOKING_ID as string;
-
 type ApiModule = typeof import('../api');
 
 // Imported lazily (at call time) rather than statically at module scope. The page test
@@ -30,15 +28,17 @@ export default function FloralCollection() {
   useEffect(() => {
     let cancelled = false;
     loadApi().then(async (api) => {
-      const [cfg, prods, bk, its] = await Promise.all([
+      const [cfg, prods, bk] = await Promise.all([
         api.getAppConfig(),
         api.getProducts(),
-        api.getBooking(BOOKING_ID),
-        api.getBookingItems(BOOKING_ID),
+        api.getMyBooking(),
       ]);
       if (cancelled) return;
       setConfig(cfg);
       setProducts(prods);
+      if (!bk) return;
+      const its = await api.getBookingItems(bk.id);
+      if (cancelled) return;
       setBooking(bk);
       setItems(its);
     });
@@ -65,7 +65,7 @@ export default function FloralCollection() {
 
   const goToConfirmation = () => navigate('/confirmation');
 
-  if (!config) return null;
+  if (!config || !booking) return null;
 
   return (
     <>

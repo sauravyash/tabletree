@@ -1,5 +1,5 @@
 import type { Session, User } from '@supabase/supabase-js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { deliverBooking, getBookingItems, getProducts, listPendingBookings } from '../api';
 import { formatPrice } from '../money';
@@ -267,8 +267,6 @@ export default function StaffBookings() {
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const searchParamsRef = useRef(searchParams);
-  searchParamsRef.current = searchParams;
 
   const activeTab = parseStaffTab(searchParams.get('tab'));
   const selectedBookingId = searchParams.get('booking') ?? undefined;
@@ -283,12 +281,13 @@ export default function StaffBookings() {
   const selectedItemsLoaded = !!(selectedBookingId && Object.prototype.hasOwnProperty.call(itemsByBooking, selectedBookingId));
 
   function updateWorkspaceParams(next: { tab?: StaffTab; booking?: string | null }, replace = false) {
-    const params = new URLSearchParams(searchParamsRef.current);
-    if (next.tab) params.set('tab', next.tab);
-    else params.delete('tab');
-    if (next.booking) params.set('booking', next.booking);
-    else if (next.booking === null) params.delete('booking');
-    setSearchParams(params, { replace });
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      if (next.tab !== undefined) params.set('tab', next.tab);
+      if (next.booking) params.set('booking', next.booking);
+      else if (next.booking === null) params.delete('booking');
+      return params;
+    }, { replace });
   }
 
   async function refresh() {

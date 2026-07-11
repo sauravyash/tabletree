@@ -10,20 +10,32 @@ export default function Beverage() {
   const apiRef = useRef<ApiModule | null>(null);
   const [options, setOptions] = useState<string[]>([]);
   const [choice, setChoice] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!booking) { navigate('/'); return; }
+    if (!booking) {
+      navigate('/');
+      return;
+    }
+
     let cancelled = false;
     import('../api').then(async (api) => {
       apiRef.current = api;
-      const o = await api.getConfigList('beverage_options');
-      if (!cancelled) setOptions(o);
+      const beverageOptions = await api.getConfigList('beverage_options');
+      if (!cancelled) setOptions(beverageOptions);
     });
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [booking, navigate]);
+
   async function onContinue() {
-    if (choice && apiRef.current) { await apiRef.current.setBeverage(choice); }
+    if (choice && apiRef.current) {
+      await apiRef.current.setBeverage(choice);
+    }
     navigate('/address');
   }
+
   return (
     <div className="screen"><div className="wrap">
       <header className="head"><p className="eyebrow">Step 2 of 6</p><h1>What's your usual?</h1></header>
