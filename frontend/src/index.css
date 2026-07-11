@@ -193,6 +193,41 @@ button { font-family: 'Work Sans', sans-serif; }
 .account-form [role="alert"] { margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff1ed; color: #9d3726; font-size: 14px; }
 .account-form .funnel-action { margin-top: 4px; }
 
+/* Landing wish composer */
+.landing-screen { padding: clamp(32px, 7vh, 76px) 20px 56px; background: linear-gradient(135deg, #fffdf8 0%, #f8f1e3 100%); }
+.landing-wrap { width: min(100%, 1240px); min-height: min(650px, calc(100vh - 112px)); display: grid; grid-template-columns: minmax(300px, 0.9fr) minmax(440px, 1.1fr); align-items: center; gap: clamp(48px, 9vw, 150px); }
+.landing-head { max-width: 510px; margin: 0; text-align: left; }
+.landing-head h1 { font-size: clamp(38px, 6vw, 54px); letter-spacing: -0.04em; }
+.landing-card { padding: clamp(24px, 4vw, 40px); border: 1px solid var(--line); border-radius: 26px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 28px 65px -40px rgba(58, 46, 31, 0.44); }
+.wish-kicker { margin: 0 0 12px; color: var(--gold); font-size: 11px; font-weight: 650; letter-spacing: 0.13em; text-transform: uppercase; }
+.landing-card h2 { margin: 0 0 8px; color: var(--gold-deep); font-family: 'Fraunces', serif; font-size: clamp(25px, 4vw, 34px); font-weight: 500; }
+.landing-card > p:not(.wish-kicker):not(.wish-saved) { margin: 0; color: var(--muted); line-height: 1.55; }
+.wish-composer { display: flex; align-items: center; gap: 10px; margin-top: 26px; padding: 8px 8px 8px 18px; border: 1px solid var(--line-strong); border-radius: 18px; background: #fff; box-shadow: 0 8px 22px -18px rgba(58, 46, 31, 0.42); }
+.wish-composer:focus-within { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(184, 137, 46, 0.13); }
+.wish-composer input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; }
+.wish-composer input::placeholder { color: #9d927f; }
+.wish-composer button { width: 42px; height: 42px; flex: 0 0 auto; border: 0; border-radius: 13px; background: var(--gold); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+.wish-composer button:disabled { cursor: not-allowed; opacity: 0.45; }
+.wish-launch { position: relative; display: flex; align-items: center; min-height: 60px; margin-top: 26px; overflow: hidden; border-radius: 18px; color: var(--gold-deep); font-size: 14px; font-weight: 650; }
+.wish-launch > span:last-child { opacity: 0; animation: wish-message-in 0.3s ease 0.78s forwards; }
+.shooting-star { position: absolute; left: -16%; top: 50%; width: 28px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, #f3d890 48%, #fff 100%); box-shadow: 16px 0 12px rgba(184, 137, 46, 0.38), 28px 0 24px rgba(184, 137, 46, 0.18); transform: translateY(-50%); animation: shooting-star 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+@keyframes shooting-star { 0% { left: -16%; opacity: 0; transform: translateY(-50%) scaleX(0.35); } 12% { opacity: 1; } 75% { opacity: 1; } 100% { left: 108%; opacity: 0; transform: translateY(-50%) scaleX(1.8); } }
+@keyframes wish-message-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.landing-card [role="alert"] { margin: 12px 0 0; color: #9d3726; font-size: 13px; }
+.wish-saved { margin: 12px 0 0; color: #5e7c50; font-size: 13px; }
+.landing-action { margin-top: 24px; min-height: 52px; border-radius: 14px; font-size: 16px; }
+
+@media (max-width: 820px) {
+  .landing-screen { padding-block: 40px; }
+  .landing-wrap { min-height: 0; grid-template-columns: 1fr; gap: 26px; max-width: 620px; }
+  .landing-head { margin: 0 auto; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wish-launch > span:last-child, .shooting-star { animation: none; opacity: 1; }
+  .shooting-star { display: none; }
+}
+
 @media (max-width: 500px) {
   .funnel-screen { padding-inline: 16px; }
   .funnel-card { border-radius: 20px; }

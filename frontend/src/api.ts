@@ -100,6 +100,10 @@ export async function setBeverage(beverage: string): Promise<void> {
   const { error } = await supabase.rpc('set_booking_beverage', { p_beverage: beverage });
   if (error) throw error;
 }
+export async function setBookingWish(wish: string): Promise<void> {
+  const { error } = await supabase.rpc('set_booking_wish', { p_wish: wish });
+  if (error) throw error;
+}
 export async function checkPostcode(postcode: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('check_postcode', { p_postcode: postcode });
   if (error) throw error; return data as boolean;
@@ -135,7 +139,7 @@ export async function getConfigList(key: string): Promise<string[]> {
   if (error) throw error; return (data?.value as string[]) ?? [];
 }
 function mapDraft(b: any): DraftBooking {
-  return { id: b.id, storeCode: b.store_code, beverage: b.beverage,
+  return { id: b.id, storeCode: b.store_code, beverage: b.beverage, wish: b.wish,
     addressLine1: b.address_line1, addressLine2: b.address_line2, suburb: b.suburb,
     postcode: b.postcode, slotAt: b.slot_at, holdExpiresAt: b.hold_expires_at,
     customerName: b.customer_name, email: b.email, status: b.status };
