@@ -2,11 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const from = vi.fn();
 const invoke = vi.fn();
-vi.mock('./supabase', () => ({ supabase: { from: (...a: any[]) => from(...a), functions: { invoke: (...a: any[]) => invoke(...a) } } }));
+const rpc = vi.fn();
+const { auth } = vi.hoisted(() => ({
+  auth: { getSession: vi.fn(), signInAnonymously: vi.fn(), updateUser: vi.fn() },
+}));
+vi.mock('./supabase', () => ({ supabase: { from: (...a: any[]) => from(...a),
+  functions: { invoke: (...a: any[]) => invoke(...a) }, rpc: (...a: any[]) => rpc(...a), auth } }));
 
-import { getAppConfig, addBookingItem, deliverBooking, listPendingBookings, createSetupIntent, saveCard } from './api';
+import { getAppConfig, addBookingItem, deliverBooking, listPendingBookings, createSetupIntent, saveCard,
+  startDraftBooking, checkPostcode, availableSlots, holdSlot, getConfigList } from './api';
 
-beforeEach(() => { from.mockReset(); invoke.mockReset(); });
+beforeEach(() => { from.mockReset(); invoke.mockReset(); rpc.mockReset(); });
 
 describe('getAppConfig', () => {
   it('maps app_config rows to purchaseEnabled + pricingMode', async () => {
@@ -67,5 +73,40 @@ describe('card-save api', () => {
     const out = await saveCard('b2', 'seti_1');
     expect(invoke).toHaveBeenCalledWith('save-card', { body: { booking_id: 'b2', setup_intent_id: 'seti_1' } });
     expect(out).toEqual({ saved: true });
+  });
+});
+
+describe('startDraftBooking', () => {
+  it('calls the RPC and returns the id', async () => {
+    rpc.mockResolvedValue({ data: 'bk-1', error: null });
+    expect(await startDraftBooking('SHOP42')).toBe('bk-1');
+    expect(rpc).toHaveBeenCalledWith('start_draft_booking', { p_store_code: 'SHOP42' });
+  });
+});
+describe('checkPostcode', () => {
+  it('returns the boolean', async () => {
+    rpc.mockResolvedValue({ data: true, error: null });
+    expect(await checkPostcode('2000')).toBe(true);
+    expect(rpc).toHaveBeenCalledWith('check_postcode', { p_postcode: '2000' });
+  });
+});
+describe('availableSlots', () => {
+  it('maps rows to camelCase', async () => {
+    rpc.mockResolvedValue({ data: [{ slot_at: '2026-07-12T09:00:00Z', remaining: 2 }], error: null });
+    expect(await availableSlots()).toEqual([{ slotAt: '2026-07-12T09:00:00Z', remaining: 2 }]);
+  });
+});
+describe('holdSlot', () => {
+  it('returns the boolean', async () => {
+    rpc.mockResolvedValue({ data: false, error: null });
+    expect(await holdSlot('2026-07-12T09:00:00Z')).toBe(false);
+    expect(rpc).toHaveBeenCalledWith('hold_slot', { p_slot_at: '2026-07-12T09:00:00Z' });
+  });
+});
+describe('getConfigList', () => {
+  it('returns the array value for a key', async () => {
+    from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: () =>
+      Promise.resolve({ data: { value: ['Latte', 'Tea'] }, error: null }) }) }) });
+    expect(await getConfigList('beverage_options')).toEqual(['Latte', 'Tea']);
   });
 });
