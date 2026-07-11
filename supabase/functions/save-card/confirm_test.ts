@@ -17,3 +17,6 @@ Deno.test('rejects a missing payment method', () => {
   assertEquals(evaluateSetupIntent({ ...ok, paymentMethod: '' }, 'cus_1'),
     { ok: false, error: 'no_payment_method' });
 });
+Deno.test('rejects a succeeded intent when the booking has no expected customer', () => {
+  assertEquals(evaluateSetupIntent(ok, null), { ok: false, error: 'customer_mismatch' });
+});

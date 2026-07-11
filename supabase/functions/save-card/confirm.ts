@@ -9,7 +9,7 @@ export function evaluateSetupIntent(
   expectedCustomer: string | null,
 ): ConfirmResult {
   if (si.status !== 'succeeded') return { ok: false, error: 'setup_not_succeeded' };
-  if (expectedCustomer && si.customer !== expectedCustomer) return { ok: false, error: 'customer_mismatch' };
+  if (!expectedCustomer || si.customer !== expectedCustomer) return { ok: false, error: 'customer_mismatch' };
   if (!si.paymentMethod) return { ok: false, error: 'no_payment_method' };
   return { ok: true, customer: si.customer, paymentMethod: si.paymentMethod };
 }
