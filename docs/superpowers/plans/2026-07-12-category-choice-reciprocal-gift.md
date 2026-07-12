@@ -12,7 +12,8 @@
 
 - Category values are exactly the strings `'beverage'` and `'flower'` everywhere (DB check constraints, TS unions, API args).
 - Payment is **display-only**: prices are shown but nothing is auto-charged; the existing Stripe setup-intent card-save flow is unchanged.
-- Exactly **one** paid item and **one** gift item per booking; re-selecting replaces the prior choice of that kind.
+- **`booking_items` price is snapshotted server-side** by the `guard_booking_item()` BEFORE-INSERT trigger (see Task 10): `$0` for gifts (`is_gift=true`), the variant's `price_cents` (or `$0` when the variant is unpriced, e.g. flowers) for paid items. **The client never sets the price**; `addBookingItem` passes a `0` placeholder and the trigger overwrites it.
+- Beverage path selects **exactly one** beverage (re-selecting replaces the prior beverage). Flower path is a **cart** (add/remove multiple flowers via `ProductCard`). The `/bonus` page adds **exactly one** gift (re-selecting replaces it).
 - New Step-2 pages (`/choose`, `/beverage`, `/flower`) use the eyebrow label **"Step 2 of 6"**; Address stays "Step 3 of 6", Card stays "Step 6 of 6".
 - Frontend unit tests mock `../api` — they do not require a live database.
 - Run frontend tests with `npm test` (i.e. `vitest run`) from `frontend/`.
@@ -247,7 +248,7 @@ git commit -m "feat(money): add formatMoney for exact dollar+cents display"
   - `BookingItem.isGift: boolean`
   - `getProductsByCategory(category: 'beverage' | 'flower'): Promise<Product[]>`
   - `setPurchaseCategory(category: 'beverage' | 'flower'): Promise<void>`
-  - `addBookingItem(bookingId: string, variantId: string, options: Record<string,string>, quantity?: number, priceCents?: number, isGift?: boolean): Promise<BookingItem>` (new params default to `1, 0, false`)
+  - `addBookingItem(bookingId: string, variantId: string, options: Record<string,string>, quantity?: number, isGift?: boolean): Promise<BookingItem>` (new params default to `1, false`). **No price param** — the guard trigger (Task 10) snapshots the price server-side; the client inserts a `0` placeholder + `is_gift`.
 
 - [ ] **Step 1: Update types**
 
@@ -357,14 +358,16 @@ function mapItem(r: any): BookingItem {
 }
 ```
 
-Update `addBookingItem` to accept price + gift flag:
+Update `addBookingItem` to accept the gift flag (no price — the trigger owns it):
 
 ```ts
 export async function addBookingItem(bookingId: string, variantId: string,
-    options: Record<string,string>, quantity = 1, priceCents = 0, isGift = false): Promise<BookingItem> {
+    options: Record<string,string>, quantity = 1, isGift = false): Promise<BookingItem> {
+  // price_cents_snapshot is a placeholder; guard_booking_item() (BEFORE INSERT)
+  // overwrites it: 0 for gifts, the variant price (or 0 if unpriced) for paid items.
   const { data, error } = await supabase.from('booking_items')
     .insert({ booking_id: bookingId, variant_id: variantId, option_snapshot: options,
-              quantity, price_cents_snapshot: priceCents, is_gift: isGift })
+              quantity, price_cents_snapshot: 0, is_gift: isGift })
     .select().single();
   if (error) throw error;
   return mapItem(data);
@@ -715,7 +718,7 @@ describe('Beverage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Latte/ }));
     expect(screen.getByText('$5.00')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('bk-1', 'vl', {}, 1, 500, false));
+    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('bk-1', 'vl', {}, 1, false));
     expect(navigate).toHaveBeenCalledWith('/address');
   });
 
@@ -776,7 +779,7 @@ export default function Beverage() {
     if (chosen) {
       const items = await api.getBookingItems(booking.id);
       await Promise.all(items.filter((i) => !i.isGift).map((i) => api.removeBookingItem(i.id)));
-      await api.addBookingItem(booking.id, chosen.variant.id, {}, 1, chosen.variant.priceCents ?? 0, false);
+      await api.addBookingItem(booking.id, chosen.variant.id, {}, 1, false);
     }
     navigate('/address');
   }
@@ -823,7 +826,7 @@ git commit -m "feat(funnel): beverage step selects a priced product and records 
 
 ---
 
-## Task 8: `/flower` priced selection step
+## Task 8: `/flower` selection step (flower cart via ProductCard)
 
 **Files:**
 - Create: `frontend/src/funnel/Flower.tsx`
@@ -831,10 +834,10 @@ git commit -m "feat(funnel): beverage step selects a priced product and records 
 - Modify: `frontend/src/main.tsx`
 
 **Interfaces:**
-- Consumes: `getProductsByCategory('flower')`, `getBookingItems`, `removeBookingItem`, `addBookingItem`, `formatMoney`, `variantLabel` (Task 5), `useFunnel`.
-- Produces: route `/flower` (gated); on continue, one paid `booking_item` for the chosen flower variant, then navigate `/address`.
+- Consumes: `getProductsByCategory('flower')`, `getBookingItems`, `addBookingItem`, `removeBookingItem` (Task 4); `ProductCard`, `ContinueBar` (existing components); `useFunnel`.
+- Produces: route `/flower` (gated); paid `booking_item`s (`isGift=false`) for each added flower, then navigate `/address` on continue/skip.
 
-Note: flowers currently have `priceCents: null`, so `formatMoney` isn't used for a real price yet; show the variant label and (when a price exists) its `formatMoney`. Selection is per-variant (each size is its own option) to keep this page simple and mirror the beverage step; the richer `ProductCard` size/handle UI stays on the bonus/legacy path only.
+**Why a cart, not single-select:** the flower category includes the Box Bouquet, whose variants require a `handle` option (with/without) — the `guard_booking_item()` trigger rejects a paid box insert with no valid handle. `ProductCard` already renders the size selector + handle toggle and emits the correct `options`, so the flower step reuses it (like the old FloralCollection) rather than reinventing option UI. Flowers are unpriced (`priceCents: null`) so `ProductCard` shows `$—` (display-only, honest). The step forces `purchaseEnabled: true` locally (the retired `floral_purchase_enabled` flag no longer gates purchases — see Task 10), so Add buttons are live.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -843,7 +846,7 @@ Create `frontend/src/funnel/Flower.test.tsx`:
 ```tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-const api = { getProductsByCategory: vi.fn(), getBookingItems: vi.fn(), removeBookingItem: vi.fn(), addBookingItem: vi.fn() };
+const api = { getProductsByCategory: vi.fn(), getBookingItems: vi.fn(), addBookingItem: vi.fn(), removeBookingItem: vi.fn() };
 vi.mock('../api', () => api);
 const navigate = vi.fn();
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
@@ -855,6 +858,7 @@ const products = [
     variants: [
       { id: 's', productId: 'tt', size: 'S', flowerCount: 1, foliageLevel: 'slight', priceCents: null, options: [] },
       { id: 'm', productId: 'tt', size: 'M', flowerCount: 1, foliageLevel: 'some', priceCents: null, options: [] },
+      { id: 'l', productId: 'tt', size: 'L', flowerCount: 1, foliageLevel: 'lots', priceCents: null, options: [] },
     ] },
 ];
 
@@ -866,12 +870,22 @@ beforeEach(() => {
 });
 
 describe('Flower', () => {
-  it('records the chosen flower as a paid item and advances to /address', async () => {
+  it('adds the selected flower as a paid item, then advances to /address', async () => {
     render(<Flower />);
-    fireEvent.click(await screen.findByRole('button', { name: /Table Tree — Small/ }));
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('bk-1', 's', {}, 1, 0, false));
+    // ProductCard's default size is the first variant (S); its Add button reads "Schedule Delivery".
+    const addBtn = await screen.findByRole('button', { name: /schedule delivery/i });
+    fireEvent.click(addBtn);
+    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('bk-1', 's', {}, 1, false));
+    // Continue bar (count now 1) → /address.
+    fireEvent.click(screen.getByRole('button', { name: /^continue/i }));
     expect(navigate).toHaveBeenCalledWith('/address');
+  });
+
+  it('skips to /address when nothing is added', async () => {
+    render(<Flower />);
+    fireEvent.click(await screen.findByRole('button', { name: /no thanks, continue/i }));
+    expect(navigate).toHaveBeenCalledWith('/address');
+    expect(api.addBookingItem).not.toHaveBeenCalled();
   });
 });
 ```
@@ -889,66 +903,69 @@ Create `frontend/src/funnel/Flower.tsx`:
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFunnel } from './FunnelContext';
-import type { Product } from '../types';
-import { formatMoney } from '../money';
-import { variantLabel } from './gift';
+import type { AppConfig, BookingItem, Product } from '../types';
+import { ProductCard } from '../components/ProductCard';
+import { ContinueBar } from '../components/ContinueBar';
+
+// The flower step is a live purchase page: force purchaseEnabled so ProductCard's
+// Add buttons are active regardless of the (retired) floral_purchase_enabled flag.
+// Flowers are unpriced, so pricingMode is irrelevant here (ProductCard shows $—).
+const PURCHASE_CONFIG: AppConfig = { purchaseEnabled: true, pricingMode: 'placeholder' };
 
 export default function Flower() {
   const navigate = useNavigate();
   const { booking } = useFunnel();
   const [products, setProducts] = useState<Product[]>([]);
-  const [choice, setChoice] = useState<string | null>(null); // variant id
-  const [saving, setSaving] = useState(false);
+  const [items, setItems] = useState<BookingItem[]>([]);
 
   useEffect(() => {
     if (!booking) { navigate('/'); return; }
     let cancelled = false;
     import('../api').then(async (api) => {
-      const list = await api.getProductsByCategory('flower');
-      if (!cancelled) setProducts(list);
+      const [prods, its] = await Promise.all([
+        api.getProductsByCategory('flower'),
+        api.getBookingItems(booking.id),
+      ]);
+      if (cancelled) return;
+      setProducts(prods);
+      setItems(its.filter((i) => !i.isGift));
     });
     return () => { cancelled = true; };
   }, [booking, navigate]);
 
-  const flat = products.flatMap((p) => p.variants.map((v) => ({ product: p, variant: v })));
-  const chosen = flat.find((x) => x.variant.id === choice);
-
-  async function onContinue() {
-    if (saving || !booking) return;
-    setSaving(true);
+  async function handleAdd(variantId: string, options: Record<string, string>): Promise<BookingItem> {
     const api = await import('../api');
-    if (chosen) {
-      const items = await api.getBookingItems(booking.id);
-      await Promise.all(items.filter((i) => !i.isGift).map((i) => api.removeBookingItem(i.id)));
-      await api.addBookingItem(booking.id, chosen.variant.id, {}, 1, chosen.variant.priceCents ?? 0, false);
-    }
-    navigate('/address');
+    const item = await api.addBookingItem(booking!.id, variantId, options, 1, false);
+    setItems((prev) => [...prev, item]);
+    return item;
+  }
+  async function handleRemove(itemId: string): Promise<void> {
+    const api = await import('../api');
+    await api.removeBookingItem(itemId);
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
   }
 
+  const goToAddress = () => navigate('/address');
+  if (!booking) return null;
+
   return (
-    <div className="screen funnel-screen"><div className="wrap funnel-wrap">
-      <header className="head funnel-head">
-        <p className="eyebrow">Step 2 of 6</p>
-        <div className="funnel-progress" aria-hidden="true"><span style={{ width: '33.333%' }} /></div>
-        <h1>Pick your flower</h1>
-        <p>Choose your arrangement.</p>
-      </header>
-      <section className="funnel-card beverage-card" aria-label="Choose a flower">
-        <div className="beverage-grid">
-          {flat.map(({ product, variant }) => (
-            <button key={variant.id} className="beverage-option" aria-pressed={choice === variant.id}
-              onClick={() => setChoice(variant.id)}>
-              <span className="beverage-mark" aria-hidden="true">✿</span>
-              <span>{variantLabel(product, variant)}</span>
-              {variant.priceCents != null && <span className="beverage-price">{formatMoney(variant.priceCents)}</span>}
-            </button>
+    <>
+      <div className="grain" />
+      <div className="screen"><div className="wrap">
+        <header className="head">
+          <p className="eyebrow">Step 2 of 6</p>
+          <h1>Pick your flowers</h1>
+          <p>Choose an arrangement — add as many as you like.</p>
+        </header>
+        <div className="grid">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} config={PURCHASE_CONFIG}
+              onAdd={handleAdd} onRemove={handleRemove} />
           ))}
         </div>
-        <button className="add-btn funnel-action" onClick={onContinue} disabled={saving}>
-          {chosen ? `Continue with ${variantLabel(chosen.product, chosen.variant)}` : 'Continue without choosing'}
-        </button>
-      </section>
-    </div></div>
+      </div></div>
+      <ContinueBar count={items.length} onSkip={goToAddress} onContinue={goToAddress} />
+    </>
   );
 }
 ```
@@ -970,13 +987,13 @@ Add to the `FunnelGate` children (near `/beverage`):
 - [ ] **Step 5: Run to verify it passes**
 
 Run: `npm test -- Flower`
-Expected: PASS.
+Expected: PASS (both cases).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add frontend/src/funnel/Flower.tsx frontend/src/funnel/Flower.test.tsx frontend/src/main.tsx
-git commit -m "feat(funnel): add /flower priced selection step"
+git commit -m "feat(funnel): add /flower flower-cart selection step (reuses ProductCard)"
 ```
 
 ---
@@ -1059,7 +1076,7 @@ describe('Bonus — beverage buyer sees flowers, cheapest is the free gift', () 
     // The larger size is shown but not free-selectable.
     expect(screen.queryByRole('button', { name: /add free gift — Table Tree — Large/i })).toBeNull();
     fireEvent.click(giftBtn);
-    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('b1', 's', {}, 1, 0, true));
+    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('b1', 's', {}, 1, true));
     expect(screen.queryByText(/\$/)).toBeNull(); // no prices shown
   });
 });
@@ -1074,7 +1091,7 @@ describe('Bonus — flower buyer picks one of the cheapest beverages', () => {
     const teaBtn = await screen.findByRole('button', { name: /add free gift — Tea/i }); // 400 = cheapest
     expect(screen.queryByRole('button', { name: /add free gift — Latte/i })).toBeNull(); // 500 not eligible
     fireEvent.click(teaBtn);
-    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('b1', 'vt', {}, 1, 0, true));
+    await waitFor(() => expect(api.addBookingItem).toHaveBeenCalledWith('b1', 'vt', {}, 1, true));
   });
 });
 ```
@@ -1130,7 +1147,7 @@ export default function Bonus() {
     const api = await loadApi();
     const items = await api.getBookingItems(booking.id);
     await Promise.all(items.filter((i) => i.isGift).map((i) => api.removeBookingItem(i.id)));
-    const item = await api.addBookingItem(booking.id, variantId, {}, 1, 0, true);
+    const item = await api.addBookingItem(booking.id, variantId, {}, 1, true);
     setGiftItemId(item.id);
   }
 
@@ -1227,21 +1244,105 @@ git commit -m "feat(bonus): category-driven /bonus free-gift page; retire Floral
 
 ---
 
+## Task 10: Rewrite `guard_booking_item()` for gifts + beverages/unpriced flowers
+
+> **Execute this task early — right after Task 1** — because Tasks 4/7/8/9 depend on its price/gift semantics. (Frontend unit tests mock the API and pass regardless, but the live flow is broken without it.)
+
+**Files:**
+- Create: `supabase/migrations/0011_booking_item_gift_guard.sql`
+
+**Interfaces:**
+- Produces: a reworked `guard_booking_item()` BEFORE-INSERT trigger function. Gifts (`is_gift=true`) always snapshot `price_cents_snapshot = 0`, force empty options, and bypass the purchase/pricing gates. Paid items validate options (handle for box variants) and snapshot `coalesce(variant.price_cents, 0)`. The old `floral_purchase_enabled` hard-block is removed.
+
+**Why:** The original `guard_booking_item()` (migrations `0003`/`0004`) hard-blocks every insert unless `floral_purchase_enabled` is true (seeded false), rejects unpriced variants (`variant_unpriced`), and force-snapshots the variant price — none of which fit the new model where beverages and flowers are both purchasable, gifts must be free, and flowers are as-yet unpriced. `create or replace function` rebinds the existing `trg_guard_booking_item` trigger automatically; no trigger recreation needed.
+
+- [ ] **Step 1: Write the migration**
+
+Create `supabase/migrations/0011_booking_item_gift_guard.sql`:
+
+```sql
+-- Rework the booking_items guard for the beverage/flower + free-gift model.
+-- Beverages and flowers are both purchasable products now, and a booking_item may be
+-- a paid item or a free gift (is_gift). The prior guard hard-blocked all inserts behind
+-- floral_purchase_enabled, rejected unpriced variants, and force-snapshotted the variant
+-- price — none of which fit gifts (must be $0) or as-yet-unpriced flowers.
+
+create or replace function guard_booking_item()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v record;
+  v_handle text;
+begin
+  select price_cents, active into v from product_variants where id = new.variant_id;
+  if v is null or not v.active then
+    raise exception 'variant_inactive';
+  end if;
+
+  -- Free gifts: always $0, no options, exempt from purchase/pricing gates.
+  if new.is_gift then
+    new.price_cents_snapshot := 0;
+    new.option_snapshot := '{}'::jsonb;
+    return new;
+  end if;
+
+  -- Paid items: validate options (only variants that define options may carry one).
+  if exists (select 1 from variant_options o where o.variant_id = new.variant_id) then
+    v_handle := new.option_snapshot->>'handle';
+    if v_handle is null or not exists (
+      select 1 from variant_options o
+      where o.variant_id = new.variant_id and o.option_key = 'handle' and o.option_value = v_handle
+    ) then
+      raise exception 'invalid_option';
+    end if;
+    new.option_snapshot := jsonb_build_object('handle', v_handle);
+  else
+    new.option_snapshot := '{}'::jsonb;
+  end if;
+
+  -- Server-side price snapshot; unpriced variants (e.g. flowers pending pricing)
+  -- snapshot to $0 since in-funnel payment is display-only.
+  new.price_cents_snapshot := coalesce(v.price_cents, 0);
+  return new;
+end;
+$$;
+```
+
+- [ ] **Step 2: Apply locally and sanity-check (if the stack is available)**
+
+Run: `supabase db reset`
+Expected: no errors. Then, if the local stack is available, verify a gift insert snapshots $0 and a paid beverage snapshots its price (e.g. via `supabase db query` inserting under a draft booking). If Docker/Supabase local is unavailable, skip and note it — the SQL is reviewed statically.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add supabase/migrations/0011_booking_item_gift_guard.sql
+git commit -m "feat(db): rework guard_booking_item for free gifts + beverage/flower purchases"
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage**
 - New `/choose` step in Step-2 slot → Task 6. ✓
 - Beverages as priced `products` with category → Tasks 1, 2, 4, 7. ✓
-- Flower purchase step with prices → Task 8. ✓
+- Flower purchase step (all flower products, incl. box handle option) → Task 8 (reuses `ProductCard` cart). ✓
 - `bookings.purchase_category` + RPC → Tasks 1, 4, 6. ✓
-- `booking_items.is_gift` + $0 gift → Tasks 1, 4, 9; `deliver-booking` already sums snapshots so gift = $0 with no change. ✓
+- `booking_items.is_gift` + $0 gift → Tasks 1, 4, 9, **10** (the guard trigger snapshots $0 for gifts); `deliver-booking` already sums snapshots so gift = $0 with no change. ✓
+- Server-side price integrity + gift-free + unpriced-flower support → Task 10 (guard trigger rewrite). ✓
 - `/bonus` renamed, category-driven, opposite category price-free, cheapest-tier free gift (single flower / one-of-cheapest-few beverages) → Tasks 5, 9. ✓
 - Nullable flower columns for beverages → Task 1. ✓
-- Payment display-only, one paid + one gift, step labels → enforced in Tasks 6–9 and Global Constraints. ✓
+- Payment display-only; one beverage (replace) / flower cart / one gift; step labels → enforced in Tasks 6–10 and Global Constraints. ✓
 - Legacy `bookings.beverage` / `set_booking_beverage` / `beverage_options` left in place, unreferenced by funnel → beverage step no longer calls them (Task 7); nothing drops them. ✓
 
 **Placeholder scan:** No TBD/TODO/"handle edge cases" left; every code step shows full code. ✓
 
-**Type consistency:** `getProductsByCategory`, `setPurchaseCategory`, `addBookingItem(…, priceCents, isGift)`, `Product.category`, `BookingItem.isGift`, `Booking.purchaseCategory`, and `gift.ts` exports (`freeEligibleIds`, `variantLabel`, `flattenVariants`, `cheapestVariant`) are defined in Tasks 4/5 and consumed with matching signatures in Tasks 6–9. ✓
+**Type consistency:** `getProductsByCategory`, `setPurchaseCategory`, `addBookingItem(bookingId, variantId, options, quantity?, isGift?)` (no client price param), `Product.category`, `BookingItem.isGift`, `Booking.purchaseCategory`, and `gift.ts` exports (`freeEligibleIds`, `variantLabel`, `flattenVariants`, `cheapestVariant`) are defined in Tasks 4/5 and consumed with matching signatures in Tasks 6–9. ✓
 
-**Note for implementer:** Task 8 mirrors Task 7's structure closely — the two selection steps share a shape but differ in category, copy, labels, and the flower page's use of `variantLabel`. If during implementation the duplication feels heavy, extracting a shared `<CategorySelect>` is a reasonable refactor, but it is not required for correctness and is out of the plan's critical path.
+**Execution order:** 1 → **10** → 3 → 4 → 5 → 6 → 7 → 8 → 9. Task 10 runs right after Task 1 (both DB); the rest follow the numbered order.
+
+**Note for implementer:** Task 7 (beverage, single-select grid) and Task 8 (flower, ProductCard cart) now differ in shape — no shared-component extraction is expected. `ProductCard`/`SizeSelector`/`HandleToggle` remain used (by the flower step); only `FloralCollection` is deleted in Task 9.
