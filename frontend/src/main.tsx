@@ -5,6 +5,7 @@ import { FunnelProvider } from './funnel/FunnelContext';
 import Landing from './funnel/Landing';
 import Choose from './funnel/Choose';
 import Beverage from './funnel/Beverage';
+import Flower from './funnel/Flower';
 import Address from './funnel/Address';
 import Slot from './funnel/Slot';
 import Account from './funnel/Account';
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
         children: [
           { path: '/choose', element: <Choose /> },
           { path: '/beverage', element: <Beverage /> },
+          { path: '/flower', element: <Flower /> },
           { path: '/address', element: <Address /> },
           { path: '/slot', element: <Slot /> },
           { path: '/account', element: <Account /> },
