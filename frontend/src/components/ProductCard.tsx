@@ -27,7 +27,7 @@ const BOX_SIZE_META: Record<string, { label: string; sub: string; desc: string }
 };
 
 function fallbackDesc(v: Variant): string {
-  const foliage = v.foliageLevel.replace(/_/g, ' ');
+  const foliage = v.foliageLevel?.replace(/_/g, ' ');
   return `${v.flowerCount} flower${v.flowerCount === 1 ? '' : 's'} with ${foliage} foliage.`;
 }
 

@@ -6,8 +6,8 @@ export interface Variant {
   id: string;
   productId: string;
   size: string;           // 'S'|'M'|'L'|'MD'|'LG'
-  flowerCount: number;
-  foliageLevel: string;
+  flowerCount: number | null;
+  foliageLevel: string | null;  // 'none'|'low'|'medium'|'high'
   priceCents: number | null;
   options: VariantOption[];
 }
