@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Booking, BookingItem, Variant } from '../types';
 import { formatPrice } from '../money';
 
@@ -17,6 +18,7 @@ function loadApi(): Promise<ApiModule> {
 }
 
 export default function Confirmation() {
+  const navigate = useNavigate();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [items, setItems] = useState<BookingItem[]>([]);
   const [variants, setVariants] = useState<Map<string, { v: Variant; product: string }>>(new Map());
@@ -67,6 +69,9 @@ export default function Confirmation() {
             </ul>
           </section>
         )}
+        <button className="confirmation-home-button" type="button" onClick={() => navigate('/')}>
+          Return to home
+        </button>
       </div>
     </div>
   );
