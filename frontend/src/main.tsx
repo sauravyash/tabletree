@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
 import { FunnelProvider } from './funnel/FunnelContext';
 import Landing from './funnel/Landing';
 import Choose from './funnel/Choose';
@@ -11,7 +11,7 @@ import Slot from './funnel/Slot';
 import Account from './funnel/Account';
 import Card from './funnel/Card';
 import FunnelGate from './funnel/FunnelGate';
-import FloralCollection from './pages/FloralCollection';
+import Bonus from './pages/Bonus';
 import Confirmation from './pages/Confirmation';
 import StaffBookings from './pages/StaffBookings';
 import ComingSoon from './pages/ComingSoon';
@@ -40,7 +40,8 @@ const router = createBrowserRouter([
       },
     ],
   },
-  { path: '/bonus-flowers', element: <FloralCollection /> },
+  { path: '/bonus', element: <Bonus /> },
+  { path: '/bonus-flowers', element: <Navigate to="/bonus" replace /> },
   { path: '/jobs', element: <ComingSoon title="Jobs" /> },
   { path: '/cowork', element: <ComingSoon title="Co-work" /> },
   { path: '/confirmation', element: <Confirmation /> },

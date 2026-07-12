@@ -44,7 +44,8 @@ export async function getProductsByCategory(category: 'beverage' | 'flower'): Pr
 
 function mapBooking(b: any): Booking {
   return { id: b.id, customerName: b.customer_name, email: b.email, slotAt: b.slot_at,
-           coffeePriceCents: b.coffee_price_cents, redemptionToken: b.redemption_token, status: b.status };
+           coffeePriceCents: b.coffee_price_cents, redemptionToken: b.redemption_token, status: b.status,
+           purchaseCategory: b.purchase_category ?? null };
 }
 export async function getBooking(bookingId: string): Promise<Booking> {
   const { data, error } = await supabase.from('bookings').select().eq('id', bookingId).single();

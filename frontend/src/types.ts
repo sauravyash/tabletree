@@ -22,6 +22,7 @@ export interface Booking {
   id: string; customerName: string | null; email: string | null;
   slotAt: string | null; coffeePriceCents: number | null;
   redemptionToken: string; status: string;
+  purchaseCategory: 'beverage' | 'flower' | null;
 }
 
 export interface BookingItem {

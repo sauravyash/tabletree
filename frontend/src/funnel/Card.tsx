@@ -16,7 +16,7 @@ export default function Card() {
   async function onSaved() {
     const api = await import('../api');
     await api.finalizeDraftBooking();
-    navigate('/bonus-flowers');
+    navigate('/bonus');
   }
 
   return (

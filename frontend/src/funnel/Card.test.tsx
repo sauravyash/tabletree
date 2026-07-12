@@ -23,10 +23,10 @@ beforeEach(() => {
 });
 
 describe('funnel Card', () => {
-  it('finalizes the booking and routes to /bonus-flowers after save', async () => {
+  it('finalizes the booking and routes to /bonus after save', async () => {
     render(<Card />);
     fireEvent.click(await screen.findByRole('button', { name: /save card/i }));
     await waitFor(() => expect(api.finalizeDraftBooking).toHaveBeenCalled());
-    expect(navigate).toHaveBeenCalledWith('/bonus-flowers');
+    expect(navigate).toHaveBeenCalledWith('/bonus');
   });
 });
