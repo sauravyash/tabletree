@@ -10,7 +10,8 @@ vi.mock('./supabase', () => ({ supabase: { from: (...a: any[]) => from(...a),
   functions: { invoke: (...a: any[]) => invoke(...a) }, rpc: (...a: any[]) => rpc(...a), auth } }));
 
 import { getAppConfig, addBookingItem, deliverBooking, listPendingBookings, createSetupIntent, saveCard,
-  startDraftBooking, setBookingWish, checkPostcode, availableSlots, holdSlot, getConfigList } from './api';
+  startDraftBooking, setBookingWish, checkPostcode, availableSlots, holdSlot, getConfigList,
+  getProductsByCategory, setPurchaseCategory } from './api';
 
 beforeEach(() => { from.mockReset(); invoke.mockReset(); rpc.mockReset(); });
 
@@ -115,5 +116,25 @@ describe('getConfigList', () => {
     from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: () =>
       Promise.resolve({ data: { value: ['Latte', 'Tea'] }, error: null }) }) }) });
     expect(await getConfigList('beverage_options')).toEqual(['Latte', 'Tea']);
+  });
+});
+
+describe('getProductsByCategory', () => {
+  it('filters products by category', async () => {
+    const eq2 = vi.fn().mockResolvedValue({ data: [], error: null });
+    const eq1 = vi.fn().mockReturnValue({ eq: eq2 });
+    const select = vi.fn().mockReturnValue({ eq: eq1 });
+    from.mockReturnValue({ select });
+    await getProductsByCategory('beverage');
+    expect(eq1).toHaveBeenCalledWith('active', true);
+    expect(eq2).toHaveBeenCalledWith('category', 'beverage');
+  });
+});
+
+describe('setPurchaseCategory', () => {
+  it('calls the RPC with the category', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    await setPurchaseCategory('flower');
+    expect(rpc).toHaveBeenCalledWith('set_purchase_category', { p_category: 'flower' });
   });
 });

@@ -11,20 +11,35 @@ export async function getAppConfig(): Promise<AppConfig> {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('id,name,slug,description,product_variants(id,product_id,size,flower_count,foliage_level,price_cents,variant_options(option_key,option_value))')
-    .eq('active', true);
-  if (error) throw error;
-  return (data ?? []).map((p: any): Product => ({
+function mapProduct(p: any): Product {
+  return {
     id: p.id, name: p.name, slug: p.slug, description: p.description,
+    category: p.category,
     variants: (p.product_variants ?? []).map((v: any): Variant => ({
       id: v.id, productId: v.product_id, size: v.size,
       flowerCount: v.flower_count, foliageLevel: v.foliage_level, priceCents: v.price_cents,
       options: (v.variant_options ?? []).map((o: any) => ({ key: o.option_key, value: o.option_value })),
     })),
-  }));
+  };
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id,name,slug,description,category,product_variants(id,product_id,size,flower_count,foliage_level,price_cents,variant_options(option_key,option_value))')
+    .eq('active', true);
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
+}
+
+export async function getProductsByCategory(category: 'beverage' | 'flower'): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id,name,slug,description,category,product_variants(id,product_id,size,flower_count,foliage_level,price_cents,variant_options(option_key,option_value))')
+    .eq('active', true)
+    .eq('category', category);
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
 }
 
 function mapBooking(b: any): Booking {
@@ -39,7 +54,8 @@ export async function getBooking(bookingId: string): Promise<Booking> {
 
 function mapItem(r: any): BookingItem {
   return { id: r.id, bookingId: r.booking_id, variantId: r.variant_id,
-           optionSnapshot: r.option_snapshot ?? {}, priceCentsSnapshot: r.price_cents_snapshot, quantity: r.quantity };
+           optionSnapshot: r.option_snapshot ?? {}, priceCentsSnapshot: r.price_cents_snapshot,
+           quantity: r.quantity, isGift: r.is_gift ?? false };
 }
 export async function getBookingItems(bookingId: string): Promise<BookingItem[]> {
   const { data, error } = await supabase.from('booking_items').select().eq('booking_id', bookingId);
@@ -48,9 +64,12 @@ export async function getBookingItems(bookingId: string): Promise<BookingItem[]>
 }
 
 export async function addBookingItem(bookingId: string, variantId: string,
-    options: Record<string,string>, quantity = 1): Promise<BookingItem> {
+    options: Record<string,string>, quantity = 1, isGift = false): Promise<BookingItem> {
+  // price_cents_snapshot is a placeholder; guard_booking_item() (BEFORE INSERT)
+  // overwrites it: 0 for gifts, the variant price (or 0 if unpriced) for paid items.
   const { data, error } = await supabase.from('booking_items')
-    .insert({ booking_id: bookingId, variant_id: variantId, option_snapshot: options, quantity, price_cents_snapshot: 0 })
+    .insert({ booking_id: bookingId, variant_id: variantId, option_snapshot: options,
+              quantity, price_cents_snapshot: 0, is_gift: isGift })
     .select().single();
   if (error) throw error;
   return mapItem(data);
@@ -148,6 +167,10 @@ export async function getMyDraftBooking(): Promise<DraftBooking | null> {
   const { data, error } = await supabase.from('bookings').select()
     .eq('status', 'draft').order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (error) throw error; return data ? mapDraft(data) : null;
+}
+export async function setPurchaseCategory(category: 'beverage' | 'flower'): Promise<void> {
+  const { error } = await supabase.rpc('set_purchase_category', { p_category: category });
+  if (error) throw error;
 }
 export async function getMyBooking(): Promise<Booking | null> {
   const { data, error } = await supabase.from('bookings').select()

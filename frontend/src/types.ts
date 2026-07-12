@@ -14,6 +14,7 @@ export interface Variant {
 
 export interface Product {
   id: string; name: string; slug: string; description: string | null;
+  category: 'beverage' | 'flower';
   variants: Variant[];
 }
 
@@ -26,7 +27,7 @@ export interface Booking {
 export interface BookingItem {
   id: string; bookingId: string; variantId: string;
   optionSnapshot: Record<string, string>;
-  priceCentsSnapshot: number; quantity: number;
+  priceCentsSnapshot: number; quantity: number; isGift: boolean;
 }
 
 export interface AppConfig { purchaseEnabled: boolean; pricingMode: PricingMode }
