@@ -39,9 +39,11 @@ function CardForm({
   }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form className="card-save-form" onSubmit={onSubmit}>
       <PaymentElement />
-      <button type="submit" disabled={working}>{working ? 'Saving…' : 'Save card'}</button>
+      <button className="save-card-button" type="submit" disabled={working}>
+        {working ? 'Saving…' : 'Save card'}
+      </button>
       {error && <p role="alert">{error}</p>}
     </form>
   );
