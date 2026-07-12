@@ -5,7 +5,13 @@ import type { StripeGateway } from './stripe.ts';
 export class RealStripe implements StripeGateway {
   private stripe: Stripe;
   constructor(secret: string) {
-    this.stripe = new Stripe(secret, { apiVersion: '2024-06-20' });
+    // Use Stripe's Fetch-based HTTP client. The default Node client relies on
+    // Deno.core.runMicrotasks(), which the Supabase Edge (Deno) runtime does not
+    // support and which surfaces as an unhandled event-loop error on every call.
+    this.stripe = new Stripe(secret, {
+      apiVersion: '2024-06-20',
+      httpClient: Stripe.createFetchHttpClient(),
+    });
   }
   async charge({ amount, customer, paymentMethod }: { amount: number; customer: string; paymentMethod: string }) {
     const pi = await this.stripe.paymentIntents.create({
