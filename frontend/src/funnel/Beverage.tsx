@@ -1,37 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFunnel } from './FunnelContext';
-
-type ApiModule = typeof import('../api');
+import type { Product } from '../types';
+import { formatMoney } from '../money';
 
 export default function Beverage() {
   const navigate = useNavigate();
   const { booking } = useFunnel();
-  const apiRef = useRef<ApiModule | null>(null);
-  const [options, setOptions] = useState<string[]>([]);
-  const [choice, setChoice] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [choice, setChoice] = useState<string | null>(null); // variant id
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!booking) {
-      navigate('/');
-      return;
-    }
-
+    if (!booking) { navigate('/'); return; }
     let cancelled = false;
     import('../api').then(async (api) => {
-      apiRef.current = api;
-      const beverageOptions = await api.getConfigList('beverage_options');
-      if (!cancelled) setOptions(beverageOptions);
+      const list = await api.getProductsByCategory('beverage');
+      if (!cancelled) setProducts(list);
     });
+    return () => { cancelled = true; };
+  }, [booking?.id, navigate]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [booking, navigate]);
+  const flat = products.flatMap((p) => p.variants.map((v) => ({ product: p, variant: v })));
+  const chosen = flat.find((x) => x.variant.id === choice);
 
   async function onContinue() {
-    if (choice && apiRef.current) {
-      await apiRef.current.setBeverage(choice);
+    if (saving || !booking) return;
+    setSaving(true);
+    const api = await import('../api');
+    if (chosen) {
+      const items = await api.getBookingItems(booking.id);
+      await Promise.all(items.filter((i) => !i.isGift).map((i) => api.removeBookingItem(i.id)));
+      await api.addBookingItem(booking.id, chosen.variant.id, {}, 1, false);
     }
     navigate('/address');
   }
@@ -42,19 +42,21 @@ export default function Beverage() {
         <p className="eyebrow">Step 2 of 6</p>
         <div className="funnel-progress" aria-hidden="true"><span style={{ width: '33.333%' }} /></div>
         <h1>What's your usual?</h1>
-        <p>Choose your go-to, or keep going and decide later.</p>
+        <p>Choose your beverage.</p>
       </header>
-      <section className="funnel-card beverage-card" aria-label="Choose a favourite beverage">
+      <section className="funnel-card beverage-card" aria-label="Choose a beverage">
         <div className="beverage-grid">
-          {options.map((o) => (
-            <button key={o} className="beverage-option" aria-pressed={choice === o} onClick={() => setChoice(o)}>
-              <span className="beverage-mark" aria-hidden="true">{o === 'Tea' ? '✦' : '☕'}</span>
-              <span>{o}</span>
+          {flat.map(({ product, variant }) => (
+            <button key={variant.id} className="beverage-option" aria-pressed={choice === variant.id}
+              onClick={() => setChoice(variant.id)}>
+              <span className="beverage-mark" aria-hidden="true">{product.slug === 'tea' ? '✦' : '☕'}</span>
+              <span>{product.name}</span>
+              <span className="beverage-price">{formatMoney(variant.priceCents ?? 0)}</span>
             </button>
           ))}
         </div>
-        <button className="add-btn funnel-action" onClick={onContinue}>
-          {choice ? `Continue with ${choice}` : 'Continue without choosing'}
+        <button className="add-btn funnel-action" onClick={onContinue} disabled={saving}>
+          {chosen ? `Continue with ${chosen.product.name}` : 'Continue without choosing'}
         </button>
       </section>
     </div></div>
