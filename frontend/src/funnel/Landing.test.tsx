@@ -72,7 +72,7 @@ describe('KosList Landing', () => {
     fireEvent.click(screen.getByRole('button', { name: /co-work/i }));
     expect(navigate).toHaveBeenCalledWith('/cowork');
     fireEvent.click(screen.getByRole('button', { name: /koskup/i }));
-    expect(navigate).toHaveBeenCalledWith('/beverage');
+    expect(navigate).toHaveBeenCalledWith('/choose');
   });
 
   it('retries draft setup when it fails', async () => {

@@ -94,7 +94,7 @@ export default function Landing() {
 
       <div className="koslist-cards">
         <div className="koslist-card koslist-card--inert" aria-disabled="true">Keyboard</div>
-        <button type="button" className="koslist-card koslist-card--active" onClick={() => navigate('/beverage')}>KosKup</button>
+        <button type="button" className="koslist-card koslist-card--active" onClick={() => navigate('/choose')}>KosKup</button>
         <div className="koslist-card koslist-card--inert" aria-disabled="true">RoundTable</div>
       </div>
     </div></div>

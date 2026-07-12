@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import { FunnelProvider } from './funnel/FunnelContext';
 import Landing from './funnel/Landing';
+import Choose from './funnel/Choose';
 import Beverage from './funnel/Beverage';
 import Address from './funnel/Address';
 import Slot from './funnel/Slot';
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       {
         element: <FunnelGate />,
         children: [
+          { path: '/choose', element: <Choose /> },
           { path: '/beverage', element: <Beverage /> },
           { path: '/address', element: <Address /> },
           { path: '/slot', element: <Slot /> },
